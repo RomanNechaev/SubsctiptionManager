@@ -8,6 +8,9 @@ import ru.matmex.subscription.models.subscription.SubscriptionModel;
 import java.util.Date;
 import java.util.TimeZone;
 
+/**
+ * Класс вспомогательных функций для работы с гугл сервисами
+ */
 public class GoogleUtils {
     /**
      * Начало временного промежутка длительности события

@@ -4,15 +4,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-import ru.matmex.subscription.models.security.GoogleAuthLink;
 import ru.matmex.subscription.models.user.UserModel;
 import ru.matmex.subscription.models.user.UserUpdateModel;
-import ru.matmex.subscription.services.GoogleAuthorizationService;
 import ru.matmex.subscription.services.UserService;
-import ru.matmex.subscription.services.impl.GoogleAuthorizationServiceImpl;
 
-import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.util.List;
 
 /**
@@ -22,12 +17,10 @@ import java.util.List;
 public class UserController {
     private final UserService userService;
 
-    private final GoogleAuthorizationService googleAuthorizationService;
 
     @Autowired
-    public UserController(UserService userService) throws GeneralSecurityException, IOException {
+    public UserController(UserService userService) {
         this.userService = userService;
-        this.googleAuthorizationService = new GoogleAuthorizationServiceImpl(userService);
     }
 
     /**
@@ -60,40 +53,6 @@ public class UserController {
     @GetMapping(value = "/api/admin/app/{username}")
     public ResponseEntity<UserModel> getUserByUsername(@PathVariable String username) {
         return ResponseEntity.ok(userService.getUser(username));
-    }
-
-    /**
-     * Узнаить информацю о подключении к гугл аккаунту
-     *
-     * @return HTTP ответ с информаицей
-     */
-    @GetMapping(value = "/api/app/google")
-    public ResponseEntity<String> IsLinkedGoogleAccount() {
-        return ResponseEntity.ok(userService.getInformationAboutGoogle());
-    }
-
-    /**
-     * Получить сслыку для авторизации гугл аккаунта
-     *
-     * @return сслыка для авторизации гугл аккаунта
-     * @throws IOException
-     */
-    @GetMapping(value = "/api/app/google/link")
-    public ResponseEntity<String> linkGoogleAccount() throws IOException {
-        return ResponseEntity.ok(googleAuthorizationService.getAuthorizationUrl());
-    }
-
-    /**
-     * Авторизовать гугл аккаунт
-     *
-     * @param request ссылка в браузере после авторизации в гугл аккаунт
-     * @return информация об авторизации
-     * @throws IOException
-     */
-    @PostMapping("/api/app/google/authorize")
-    public ResponseEntity<String> authorizeToGoogleAccount(@RequestBody GoogleAuthLink request) throws IOException {
-        googleAuthorizationService.getCredentials(request.authorizationLink());
-        return ResponseEntity.ok("Все ок!");
     }
 
     /**

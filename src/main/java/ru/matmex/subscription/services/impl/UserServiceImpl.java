@@ -13,15 +13,11 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import ru.matmex.subscription.entities.User;
-import ru.matmex.subscription.entities.GoogleCredential;
-import ru.matmex.subscription.models.user.Role;
-import ru.matmex.subscription.models.user.UserModel;
-import ru.matmex.subscription.models.user.UserRegistrationModel;
-import ru.matmex.subscription.models.user.UserUpdateModel;
-import ru.matmex.subscription.repositories.CredentialRepository;
+import ru.matmex.subscription.models.user.*;
 import ru.matmex.subscription.repositories.UserRepository;
 import ru.matmex.subscription.services.CategoryService;
 import ru.matmex.subscription.services.UserService;
+import ru.matmex.subscription.services.utils.mapping.CategoryModelMapper;
 import ru.matmex.subscription.services.utils.mapping.UserModelMapper;
 
 import java.util.List;
@@ -35,7 +31,6 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final CredentialRepository credentialRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserModelMapper userModelMapper;
     private final CategoryService categoryService;
@@ -43,14 +38,12 @@ public class UserServiceImpl implements UserService {
     @Autowired
     public UserServiceImpl(UserRepository userRepository,
                            PasswordEncoder passwordEncoder,
-                           UserModelMapper userModelMapper,
-                           @Lazy CategoryService categoryService,
-                           CredentialRepository credentialRepository) {
+                           @Lazy CategoryService categoryService
+                          ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
-        this.userModelMapper = userModelMapper;
+        this.userModelMapper = new UserModelMapper(new CategoryModelMapper());
         this.categoryService = categoryService;
-        this.credentialRepository = credentialRepository;
         createAdmin();
     }
 
@@ -138,28 +131,33 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public GoogleCredential getGoogleCredential() {
+    public GoogleCredentialModel getGoogleCredentialCurrentUser() {
         User currentUser = getCurrentUser();
-        return currentUser.getGoogleCredential();
-    }
-    @Override
-    public GoogleCredential getGoogleCredential(String username) {
-        User user = userRepository
-                .findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User with name:" + username + "not found"));
-        return user.getGoogleCredential();
-    }
-    @Override
-    public void setGoogleCredential(Credential credential) {
-        User currentUser = getCurrentUser();
-        GoogleCredential newCredential = new GoogleCredential(credential.getAccessToken(), credential.getExpirationTimeMilliseconds(), credential.getRefreshToken());
-        currentUser.setGoogleCredential(newCredential);
-        credentialRepository.save(newCredential);
+        return getGoogleCredential(currentUser.getId());
     }
 
     @Override
-    public String getInformationAboutGoogle() {
-        return getCurrentUser().getGoogleCredential() == null ? "гугл аккаунт не привязан" : "гугл аккаунт успешно привязан";
+    public GoogleCredentialModel getGoogleCredential(Long id) {
+        User user = userRepository
+                .getById(id)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        return new GoogleCredentialModel(user.getAccessToken(),
+                user.getExpirationTimeMilliseconds(),
+                user.getRefreshToken());
+    }
+
+    @Override
+    public void setGoogleCredential(Credential credential) {
+        User user = getCurrentUser();
+        user.setAccessToken(credential.getAccessToken());
+        user.setExpirationTimeMilliseconds(credential.getExpirationTimeMilliseconds());
+        user.setRefreshToken(credential.getRefreshToken());
+        userRepository.save(user);
+    }
+
+    @Override
+    public String getInformationAboutGoogle(Long id) {
+        return getGoogleCredential(id) == null ? "гугл аккаунт не привязан" : "гугл аккаунт успешно привязан";
     }
 
     /**

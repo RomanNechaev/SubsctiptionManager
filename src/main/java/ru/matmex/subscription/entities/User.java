@@ -1,5 +1,6 @@
 package ru.matmex.subscription.entities;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import jakarta.persistence.*;
 import ru.matmex.subscription.models.user.Role;
 
@@ -42,8 +43,11 @@ public class User {
     private String password;
 
     private String email;
-    @OneToOne
-    private GoogleCredential googleCredential;
+
+    private String accessToken;
+    private Long expirationTimeMilliseconds;
+    private String refreshToken;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Category> categories;
 
@@ -88,11 +92,28 @@ public class User {
     public List<Category> getCategories() {
         return categories;
     }
-    public GoogleCredential getGoogleCredential() {
-        return googleCredential;
-    }
-    public void setGoogleCredential(GoogleCredential googleCredential) {
-        this.googleCredential = googleCredential;
+
+    public String getAccessToken() {
+        return accessToken;
     }
 
+    public void setAccessToken(String accessToken) {
+        this.accessToken = accessToken;
+    }
+
+    public Long getExpirationTimeMilliseconds() {
+        return expirationTimeMilliseconds;
+    }
+
+    public void setExpirationTimeMilliseconds(Long expirationTimeMilliseconds) {
+        this.expirationTimeMilliseconds = expirationTimeMilliseconds;
+    }
+
+    public String getRefreshToken() {
+        return refreshToken;
+    }
+
+    public void setRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
+    }
 }
