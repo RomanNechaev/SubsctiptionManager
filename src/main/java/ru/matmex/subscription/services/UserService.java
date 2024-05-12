@@ -80,5 +80,5 @@ public interface UserService extends UserDetailsService {
     /**
      * Получить информацю о привязки гугл аккаунта
      */
-    String getInformationAboutGoogle(Long id);
+    boolean getInformationAboutGoogle(Long id);
 }

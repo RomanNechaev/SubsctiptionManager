@@ -156,8 +156,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public String getInformationAboutGoogle(Long id) {
-        return getGoogleCredential(id) == null ? "гугл аккаунт не привязан" : "гугл аккаунт успешно привязан";
+    public boolean getInformationAboutGoogle(Long id) {
+        return getGoogleCredential(id) == null;
     }
 
     /**
