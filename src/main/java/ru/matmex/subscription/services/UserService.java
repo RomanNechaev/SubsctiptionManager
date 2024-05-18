@@ -78,7 +78,7 @@ public interface UserService extends UserDetailsService {
     void setGoogleCredential(Credential credential);
 
     /**
-     * Получить информацю о привязки гугл аккаунта
+     * Узнать привязан ли гугл-аккаунт у пользователя 
      * @param id пользователя
      */
     boolean isGoogleAccountLinked(Long id);

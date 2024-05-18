@@ -13,7 +13,7 @@ import java.util.TimeZone;
  * Объект формирующий из полученных данных объекты собыйти для гугл сервисов
  */
 @Component
-public class GoogleEventShaper {
+public class GoogleEventGenerator {
     /**
      * Начало временного промежутка длительности события
      * Для создания события в гугл-календаре нельзя указывать ровное начало дня (00:00:00)
@@ -33,7 +33,7 @@ public class GoogleEventShaper {
      * Стоимость подписки
      * Временной промежуток даты оплаты
      */
-    public Event formationEvents(SubscriptionModel subscription) {
+    public Event createGoogleEvents(SubscriptionModel subscription) {
         Event event = new Event();
         event.setSummary(subscription.name());
         event.setDescription("Стоимость: " + subscription.price().toString());

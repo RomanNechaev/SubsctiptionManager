@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import ru.matmex.subscription.models.subscription.SubscriptionModel;
 import ru.matmex.subscription.services.GoogleCalendarService;
 import ru.matmex.subscription.services.impl.exception.CalendarException;
-import ru.matmex.subscription.services.utils.GoogleEventShaper;
+import ru.matmex.subscription.services.utils.GoogleEventGenerator;
 
 import java.io.IOException;
 import java.util.List;
@@ -25,11 +25,11 @@ public class GoogleCalendarServiceImpl implements GoogleCalendarService {
      */
     private static final String CALENDAR_ID = "primary";
     private static final Logger logger = LoggerFactory.getLogger(GoogleCalendarServiceImpl.class);
-    private final GoogleEventShaper googleEventShaper;
+    private final GoogleEventGenerator googleEventGenerator;
 
     @Autowired
-    public GoogleCalendarServiceImpl(GoogleEventShaper googleEventShaper) {
-        this.googleEventShaper = googleEventShaper;
+    public GoogleCalendarServiceImpl(GoogleEventGenerator googleEventGenerator) {
+        this.googleEventGenerator = googleEventGenerator;
     }
 
     @Override
@@ -37,7 +37,7 @@ public class GoogleCalendarServiceImpl implements GoogleCalendarService {
         subscriptions.removeIf(subscription -> getEventsFromCalendar(calendar).stream().
                 anyMatch(event -> Objects.equals(event.getSummary(), subscription.name())));
         subscriptions.forEach(subscription -> {
-            insertSubscriptionsInCalendar(calendar, googleEventShaper.formationEvents(subscription));
+            insertSubscriptionsInCalendar(calendar, googleEventGenerator.createGoogleEvents(subscription));
         });
     }
 
