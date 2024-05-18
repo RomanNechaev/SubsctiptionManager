@@ -8,24 +8,27 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.services.calendar.Calendar;
 import com.google.api.services.calendar.CalendarScopes;
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ru.matmex.subscription.SubscriptionApplication;
 import ru.matmex.subscription.models.security.GoogleCredentialHandler;
 import ru.matmex.subscription.services.GoogleAuthorizationService;
 import ru.matmex.subscription.services.UserService;
+import ru.matmex.subscription.services.impl.exception.GoogleAuthorizationException;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Сервис для работы с авторизаций в гугл аккаунт
  */
-
 @Service
 public class GoogleAuthorizationServiceImpl implements GoogleAuthorizationService {
     private final UserService userService;
@@ -55,44 +58,75 @@ public class GoogleAuthorizationServiceImpl implements GoogleAuthorizationServic
      */
     private LocalServerReceiver receiver;
 
+    @Autowired
     public GoogleAuthorizationServiceImpl(UserService userService) throws GeneralSecurityException, IOException {
         this.userService = userService;
-        init();
     }
 
-    @Override
-    public Credential getCredentials(String responseUrl) throws IOException {
-        return new GoogleCredentialHandler(flow, receiver, userService).authorize(responseUrl);
-    }
-
-    @Override
-    public String getAuthorizationUrl() throws IOException {
-        String redirectUri = receiver.getRedirectUri();
-        AuthorizationCodeRequestUrl authorizationUrl = flow.newAuthorizationUrl().setRedirectUri(redirectUri);
-        return authorizationUrl.build();
-    }
-
-    @Override
-    public Credential getCurrentUserCredential() throws IOException {
-        return new GoogleCredentialHandler(flow, receiver, userService).loadCredential(userService.getGoogleCredential());
-    }
-
-    private void init() throws IOException {
-        InputStream in = GoogleCalendarService.class.getResourceAsStream(CREDENTIALS_FILE_PATH);
-        if (in == null) {
-            throw new FileNotFoundException("Resource not found: " + CREDENTIALS_FILE_PATH);
-        }
-        GoogleClientSecrets clientSecrets =
-                GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
-
+    @PostConstruct
+    private void init() {
         flow = new GoogleAuthorizationCodeFlow.Builder(
-                HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, SCOPES)
+                getHttpTransport(), JSON_FACTORY, loadClientSecrets(), SCOPES)
                 .setAccessType("offline")
                 .build();
         receiver = new LocalServerReceiver.Builder().setPort(8888).build();
     }
 
+
+    @Override
+    public Credential getCredentials(String responseUrl) {
+        return new GoogleCredentialHandler(flow, receiver, userService).authorize(responseUrl);
+    }
+
+    @Override
+    public String getAuthorizationUrl() {
+        AuthorizationCodeRequestUrl authorizationUrl = flow.newAuthorizationUrl().setRedirectUri(getRedirectUri());
+        return authorizationUrl.build();
+    }
+
+    /**
+     * @return URI перенаправления
+     */
+    private String getRedirectUri() {
+        try {
+            return receiver.getRedirectUri();
+        } catch (IOException e) {
+            throw new GoogleAuthorizationException("Не удалось получить RedirectUri" + e.getMessage());
+        }
+    }
+
+    @Override
+    public Credential getCurrentUserCredential() {
+        return new GoogleCredentialHandler(flow, receiver, userService).loadCredential(userService.getGoogleCredentialCurrentUser());
+    }
+
     public NetHttpTransport getHttpTransport() {
         return HTTP_TRANSPORT;
+    }
+
+    /**
+     * @return Секретные данные клиента необходимые для авторизации
+     */
+    private GoogleClientSecrets loadClientSecrets() {
+        try {
+            InputStreamReader inputStreamReader = new InputStreamReader(
+                    Objects.requireNonNull(getClass().getResourceAsStream(CREDENTIALS_FILE_PATH)));
+            return GoogleClientSecrets.load(JSON_FACTORY, inputStreamReader);
+        } catch (IOException e) {
+            throw new GoogleAuthorizationException("Не удалось загрузить GoogleClientSecrets" + e.getMessage());
+        }
+    }
+
+    /**
+     * Получение гугл-календаря пользователя
+     */
+    @Override
+    public Calendar getCalendar() {
+        return new Calendar.Builder(getHttpTransport(),
+                JSON_FACTORY,
+                getCurrentUserCredential())
+                .setApplicationName(SubscriptionApplication.class.getName())
+                .build();
+
     }
 }

@@ -12,25 +12,15 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import ru.matmex.subscription.entities.GoogleCredential;
 import ru.matmex.subscription.entities.User;
-import ru.matmex.subscription.models.security.Crypto;
-import ru.matmex.subscription.models.user.Role;
-import ru.matmex.subscription.models.user.UserModel;
-import ru.matmex.subscription.models.user.UserRegistrationModel;
-import ru.matmex.subscription.models.user.UserUpdateModel;
-import ru.matmex.subscription.repositories.CredentialRepository;
+import ru.matmex.subscription.models.user.*;
 import ru.matmex.subscription.repositories.UserRepository;
+import ru.matmex.subscription.services.CategoryService;
 import ru.matmex.subscription.services.UserService;
-import ru.matmex.subscription.services.notifications.Notifiable;
-import ru.matmex.subscription.services.notifications.email.EmailNotificationSender;
 import ru.matmex.subscription.services.utils.mapping.CategoryModelMapper;
 import ru.matmex.subscription.services.utils.mapping.UserModelMapper;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Optional;
-import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -38,31 +28,27 @@ import java.util.stream.Collectors;
  * Реализация сервиса для операций с пользователем
  */
 @Service
-public class UserServiceImpl extends Notifiable implements UserService {
+public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final CredentialRepository credentialRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserModelMapper userModelMapper;
-    private final Crypto crypto;
+    private final CategoryService categoryService;
 
     @Autowired
     public UserServiceImpl(UserRepository userRepository,
                            PasswordEncoder passwordEncoder,
-                           @Lazy EmailNotificationSender emailSender,
-                           Crypto crypto,
-                           CredentialRepository credentialRepository) {
+                           @Lazy CategoryService categoryService
+                          ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.userModelMapper = new UserModelMapper(new CategoryModelMapper());
-        this.credentialRepository = credentialRepository;
+        this.categoryService = categoryService;
         createAdmin();
-        addNotificationSender(emailSender);
-        this.crypto = crypto;
     }
 
     /**
-     * Загрузить пользователя по имени
+     * Найти пользователя по имени
      *
      * @param username - имя пользователя
      * @return авторизовачная информация о пользователе
@@ -81,13 +67,11 @@ public class UserServiceImpl extends Notifiable implements UserService {
         if (userRepository.existsByUsername(userRegistrationModel.username())) {
             throw new AuthenticationServiceException("Пользователь с таким именем уже существует");
         }
-        String secretKey = createSecretTelegramKey();
         User user = new User(userRegistrationModel.username(),
                 userRegistrationModel.email(),
-                passwordEncoder.encode(userRegistrationModel.password()),
-                crypto.encrypt(secretKey.getBytes(StandardCharsets.UTF_8)));
+                passwordEncoder.encode(userRegistrationModel.password()));
         userRepository.save(user);
-        registerNotification("Вы успешно зарегистрировались в приложении! \n Ваш секретный ключ для тг: " + secretKey, userRegistrationModel.username());
+        categoryService.createDefaultSubscription(user);
         return userModelMapper.map(user);
     }
 
@@ -103,13 +87,9 @@ public class UserServiceImpl extends Notifiable implements UserService {
     }
 
     @Override
-    public UserModel getUserModel(String username) {
+    public UserModel getUser(String username) {
         return userModelMapper
                 .map(userRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("User not found")));
-    }
-
-    public User getUser(String username) throws UsernameNotFoundException {
-        return userRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 
     /**
@@ -133,24 +113,6 @@ public class UserServiceImpl extends Notifiable implements UserService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 
-    public void setTelegramChatId(String username, long telegramChatId) {
-        User user = userRepository
-                .findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        user.setTelegramChatId(telegramChatId);
-        userRepository.save(user);
-    }
-
-    private String createSecretTelegramKey() {
-        Random r = new Random();
-        StringBuilder sb = new StringBuilder();
-        int length = 16;
-        while (sb.length() < length) {
-            sb.append(Integer.toHexString(r.nextInt()));
-        }
-        return sb.toString();
-    }
-
     @Override
     public String delete(String username) {
         if (!userRepository.existsByUsername(username)) {
@@ -158,7 +120,6 @@ public class UserServiceImpl extends Notifiable implements UserService {
         }
         User user = userRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("User not found"));
         userRepository.delete(user);
-        registerNotification("Пользователь " + username + " успешно удален", username);
         return "Пользователь успешно удален!";
     }
 
@@ -170,35 +131,33 @@ public class UserServiceImpl extends Notifiable implements UserService {
     }
 
     @Override
-    public GoogleCredential getGoogleCredential() {
+    public GoogleCredentialModel getGoogleCredentialCurrentUser() {
         User currentUser = getCurrentUser();
-        return currentUser.getGoogleCredential();
+        return getGoogleCredential(currentUser.getId());
     }
 
     @Override
-    public GoogleCredential getGoogleCredential(String username) {
+    public GoogleCredentialModel getGoogleCredential(Long id) {
         User user = userRepository
-                .findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User with name:" + username + "not found"));
-        return user.getGoogleCredential();
+                .getById(id)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        return new GoogleCredentialModel(user.getAccessToken(),
+                user.getExpirationTimeMilliseconds(),
+                user.getRefreshToken());
     }
 
     @Override
     public void setGoogleCredential(Credential credential) {
-        User currentUser = getCurrentUser();
-        GoogleCredential newCredential = new GoogleCredential(credential.getAccessToken(), credential.getExpirationTimeMilliseconds(), credential.getRefreshToken());
-        currentUser.setGoogleCredential(newCredential);
-        credentialRepository.save(newCredential);
+        User user = getCurrentUser();
+        user.setAccessToken(credential.getAccessToken());
+        user.setExpirationTimeMilliseconds(credential.getExpirationTimeMilliseconds());
+        user.setRefreshToken(credential.getRefreshToken());
+        userRepository.save(user);
     }
 
     @Override
-    public String getInformationAboutGoogle() {
-        return getCurrentUser().getGoogleCredential() == null ? "гугл аккаунт не привязан" : "гугл аккаунт успешно привязан";
-    }
-
-    @Override
-    public boolean checkIntegrationWithTelegram() {
-        return Optional.ofNullable(getCurrentUser().getTelegramChatId()).isPresent();
+    public boolean isGoogleAccountLinked(Long id) {
+        return getGoogleCredential(id) == null;
     }
 
     /**
