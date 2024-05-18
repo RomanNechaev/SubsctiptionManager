@@ -79,6 +79,7 @@ public interface UserService extends UserDetailsService {
 
     /**
      * Получить информацю о привязки гугл аккаунта
+     * @param id пользователя
      */
-    boolean getInformationAboutGoogle(Long id);
+    boolean isGoogleAccountLinked(Long id);
 }

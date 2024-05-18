@@ -5,11 +5,12 @@ import com.google.api.services.calendar.Calendar;
 import com.google.api.services.calendar.model.Event;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.matmex.subscription.models.subscription.SubscriptionModel;
 import ru.matmex.subscription.services.GoogleCalendarService;
 import ru.matmex.subscription.services.impl.exception.CalendarException;
-import ru.matmex.subscription.services.utils.GoogleUtils;
+import ru.matmex.subscription.services.utils.GoogleEventShaper;
 
 import java.io.IOException;
 import java.util.List;
@@ -24,23 +25,24 @@ public class GoogleCalendarServiceImpl implements GoogleCalendarService {
      */
     private static final String CALENDAR_ID = "primary";
     private static final Logger logger = LoggerFactory.getLogger(GoogleCalendarServiceImpl.class);
-    private final GoogleUtils googleUtils = new GoogleUtils();
+    private final GoogleEventShaper googleEventShaper;
 
-    /**
-     * Если какая-то подписка уже имеется в календаря, то она не вставляется.
-     */
+    @Autowired
+    public GoogleCalendarServiceImpl(GoogleEventShaper googleEventShaper) {
+        this.googleEventShaper = googleEventShaper;
+    }
+
     @Override
     public void copySubscriptionsToCalendar(Calendar calendar, List<SubscriptionModel> subscriptions) {
         subscriptions.removeIf(subscription -> getEventsFromCalendar(calendar).stream().
                 anyMatch(event -> Objects.equals(event.getSummary(), subscription.name())));
-        for (SubscriptionModel subscription : subscriptions) {
-            Event newEvent = googleUtils.subscriptionFormationAsEvents(subscription);
-            insertSubscriptionsInCalendar(calendar, newEvent);
-        }
+        subscriptions.forEach(subscription -> {
+            insertSubscriptionsInCalendar(calendar, googleEventShaper.formationEvents(subscription));
+        });
     }
 
     /**
-     * Вставка в гугл-календарь подписки пользователя, как событие,
+     * Вставка в гугл-календарь информации о попдписке пользователя
      */
     private void insertSubscriptionsInCalendar(Calendar calendar, Event newEvent) throws CalendarException {
         try {

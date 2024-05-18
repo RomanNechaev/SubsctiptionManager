@@ -156,7 +156,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public boolean getInformationAboutGoogle(Long id) {
+    public boolean isGoogleAccountLinked(Long id) {
         return getGoogleCredential(id) == null;
     }
 

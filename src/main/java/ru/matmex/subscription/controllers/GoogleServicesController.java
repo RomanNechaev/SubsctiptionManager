@@ -39,7 +39,7 @@ public class GoogleServicesController {
      */
     @GetMapping(value = "/api/app/google")
     public ResponseEntity<String> IsLinkedGoogleAccount() {
-        return ResponseEntity.ok(userService.getInformationAboutGoogle(userService.getCurrentUser().getId())
+        return ResponseEntity.ok(userService.isGoogleAccountLinked(userService.getCurrentUser().getId())
                 ? "гугл аккаунт не привязан" : "гугл аккаунт успешно привязан");
     }
 

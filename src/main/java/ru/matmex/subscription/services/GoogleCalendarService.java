@@ -10,9 +10,8 @@ import java.util.List;
  */
 public interface GoogleCalendarService {
     /**
-     * Копирует все подписки пользователя в гугл календарь сервиса.
-     * Чтобы у пользователя в календаре отображалась сама подписка и ее срок действия, как событие.
-     * @param calendar экземпляр гугл календаря
+     * Копировать информацию о подписках пользователя в гугл календарь.
+     * @param calendar календарь пользователя
      * @param subscriptions список подписок пользователя
      */
     void copySubscriptionsToCalendar(Calendar calendar, List<SubscriptionModel> subscriptions);

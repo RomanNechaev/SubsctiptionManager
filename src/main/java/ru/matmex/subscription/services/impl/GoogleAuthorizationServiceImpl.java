@@ -10,6 +10,8 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.calendar.Calendar;
 import com.google.api.services.calendar.CalendarScopes;
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.matmex.subscription.SubscriptionApplication;
 import ru.matmex.subscription.models.security.GoogleCredentialHandler;
@@ -56,10 +58,20 @@ public class GoogleAuthorizationServiceImpl implements GoogleAuthorizationServic
      */
     private LocalServerReceiver receiver;
 
+    @Autowired
     public GoogleAuthorizationServiceImpl(UserService userService) throws GeneralSecurityException, IOException {
         this.userService = userService;
-        init();
     }
+
+    @PostConstruct
+    private void init() {
+        flow = new GoogleAuthorizationCodeFlow.Builder(
+                getHttpTransport(), JSON_FACTORY, loadClientSecrets(), SCOPES)
+                .setAccessType("offline")
+                .build();
+        receiver = new LocalServerReceiver.Builder().setPort(8888).build();
+    }
+
 
     @Override
     public Credential getCredentials(String responseUrl) {
@@ -88,20 +100,12 @@ public class GoogleAuthorizationServiceImpl implements GoogleAuthorizationServic
         return new GoogleCredentialHandler(flow, receiver, userService).loadCredential(userService.getGoogleCredentialCurrentUser());
     }
 
-    private void init() {
-        flow = new GoogleAuthorizationCodeFlow.Builder(
-                getHttpTransport(), JSON_FACTORY, loadClientSecrets(), SCOPES)
-                .setAccessType("offline")
-                .build();
-        receiver = new LocalServerReceiver.Builder().setPort(8888).build();
-    }
-
     public NetHttpTransport getHttpTransport() {
         return HTTP_TRANSPORT;
     }
 
     /**
-     * @return Секреты аккаунта клиента необходимые для авторизации
+     * @return Секретные данные клиента необходимые для авторизации
      */
     private GoogleClientSecrets loadClientSecrets() {
         try {
