@@ -6,7 +6,7 @@ import ru.matmex.subscription.models.subscription.SubscriptionModel;
 import java.util.List;
 
 /**
- * Сервис для работы со с гугл календарем пользователя
+ * Сервис для работы с гугл календарем пользователя
  */
 public interface GoogleCalendarService {
     /**
