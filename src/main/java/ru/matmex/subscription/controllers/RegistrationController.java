@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import ru.matmex.subscription.models.user.UserModel;
 import ru.matmex.subscription.models.user.UserRegistrationModel;
+import ru.matmex.subscription.services.CategoryService;
 import ru.matmex.subscription.services.UserService;
 
 /**
@@ -17,10 +18,12 @@ import ru.matmex.subscription.services.UserService;
 @CrossOrigin
 public class RegistrationController {
     private final UserService userService;
+    private final CategoryService categoryService;
 
     @Autowired
-    public RegistrationController(UserService userService) {
+    public RegistrationController(UserService userService, CategoryService categoryService) {
         this.userService = userService;
+        this.categoryService = categoryService;
     }
 
     /**
@@ -31,6 +34,8 @@ public class RegistrationController {
      */
     @PostMapping("/registration")
     public ResponseEntity<UserModel> registration(@RequestBody UserRegistrationModel userRegistrationModel) {
-        return ResponseEntity.ok(userService.adduser(userRegistrationModel));
+        UserModel user = userService.adduser(userRegistrationModel);
+        categoryService.createDefaultSubscription(userService.getUser(user.username()));
+        return ResponseEntity.ok(user);
     }
 }

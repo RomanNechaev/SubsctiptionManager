@@ -52,7 +52,7 @@ public class UserController {
      */
     @GetMapping(value = "/api/admin/app/{username}")
     public ResponseEntity<UserModel> getUserByUsername(@PathVariable String username) {
-        return ResponseEntity.ok(userService.getUser(username));
+        return ResponseEntity.ok(userService.getUserModel(username));
     }
 
     /**

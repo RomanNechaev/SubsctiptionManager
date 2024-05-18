@@ -16,8 +16,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import ru.matmex.subscription.config.jwt.AuthEntryPointJwt;
 import ru.matmex.subscription.config.jwt.AuthTokenFilter;
 
-import static org.springframework.security.config.Customizer.withDefaults;
-
 /**
  * Настройки безопасности приложения
  */

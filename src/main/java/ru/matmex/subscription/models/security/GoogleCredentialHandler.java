@@ -1,6 +1,9 @@
 package ru.matmex.subscription.models.security;
 
-import com.google.api.client.auth.oauth2.*;
+import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
+import com.google.api.client.auth.oauth2.AuthorizationCodeResponseUrl;
+import com.google.api.client.auth.oauth2.Credential;
+import com.google.api.client.auth.oauth2.TokenResponse;
 import com.google.api.client.extensions.java6.auth.oauth2.VerificationCodeReceiver;
 import ru.matmex.subscription.models.user.GoogleCredentialModel;
 import ru.matmex.subscription.services.UserService;

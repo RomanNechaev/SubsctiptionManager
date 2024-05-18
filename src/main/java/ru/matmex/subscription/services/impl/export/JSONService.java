@@ -17,7 +17,7 @@ import ru.matmex.subscription.services.impl.export.reports.Report;
 @Service
 public class JSONService implements ExportReportService {
     UserService userService;
-    private static final Logger logger = LoggerFactory.getLogger(PDFService.class);
+    private static final Logger logger = LoggerFactory.getLogger(JSONService.class);
 
     @Autowired
     public JSONService(UserService userService) {
@@ -32,7 +32,7 @@ public class JSONService implements ExportReportService {
      */
     public byte[] loadReport(String nameReport) {
         String userName = userService.getCurrentUser().getUsername();
-        UserModel user = userService.getUser(userName);
+        UserModel user = userService.getUserModel(userName);
         try {
             return new ObjectMapper().writeValueAsBytes(Report.valueOf(nameReport).calculate(user));
         } catch (JsonProcessingException e) {

@@ -13,6 +13,7 @@ import java.util.Optional;
 public interface CategoryRepository extends CrudRepository<Category, Long> {
     /**
      * Получить категорию по имени и пользоватю
+     *
      * @param name - имя категории
      * @param user - пользователь
      * @return категория в виде обертки
@@ -21,6 +22,7 @@ public interface CategoryRepository extends CrudRepository<Category, Long> {
 
     /**
      * Получить категории пользователя
+     *
      * @param user - пользователь
      * @return список категорий в виде обертки
      */
@@ -28,6 +30,7 @@ public interface CategoryRepository extends CrudRepository<Category, Long> {
 
     /**
      * Получить категории по id
+     *
      * @param id - идентификатор категории в БД
      * @return категория в виде обертки
      */
@@ -35,6 +38,7 @@ public interface CategoryRepository extends CrudRepository<Category, Long> {
 
     /**
      * Проверить, существует ли категория в БД
+     *
      * @param name - имя категории
      * @param user - пользователь
      * @return

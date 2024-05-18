@@ -47,7 +47,7 @@ public class PDFService implements ExportReportService {
     @Override
     public byte[] loadReport(String nameReport) {
         String userName = userService.getCurrentUser().getUsername();
-        UserModel user = userService.getUser(userName);
+        UserModel user = userService.getUserModel(userName);
         return reportToPDF(Report.valueOf(nameReport).calculate(user));
     }
 

@@ -12,6 +12,7 @@ import java.util.Optional;
 public interface UserRepository extends CrudRepository<User, Long> {
     /**
      * Получить пользователя по имени
+     *
      * @param username - имя пользователя
      * @return пользователей в виде обертки
      */
@@ -19,6 +20,7 @@ public interface UserRepository extends CrudRepository<User, Long> {
 
     /**
      * Получить пользователя по идентификатору
+     *
      * @param id - идентификатор пользователя в БД
      * @return пользователей в виде обертки
      */
@@ -26,6 +28,7 @@ public interface UserRepository extends CrudRepository<User, Long> {
 
     /**
      * Проверить, существует ли пользователь в БД
+     *
      * @param username - имя пользователя
      * @return
      */
@@ -33,6 +36,7 @@ public interface UserRepository extends CrudRepository<User, Long> {
 
     /**
      * Получить всех пользователей из БД
+     *
      * @return
      */
     List<User> findAll();
