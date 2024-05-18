@@ -23,8 +23,9 @@ import ru.matmex.subscription.models.user.UserUpdateModel;
 import ru.matmex.subscription.repositories.CredentialRepository;
 import ru.matmex.subscription.repositories.UserRepository;
 import ru.matmex.subscription.services.UserService;
+import ru.matmex.subscription.services.notifications.NotificationService;
 import ru.matmex.subscription.services.utils.mapping.CategoryModelMapper;
-import ru.matmex.subscription.services.notifications.email.EmailNotificationSender;
+import ru.matmex.subscription.services.notifications.email.UserEmailNotificationSender;
 import ru.matmex.subscription.services.utils.mapping.UserModelMapper;
 import ru.matmex.subscription.utils.UserBuilder;
 
@@ -44,9 +45,15 @@ class UserServiceImplTest {
     private final PasswordEncoder passwordEncoder = Mockito.mock(PasswordEncoder.class);
     private final UserModelMapper userModelMapper = new UserModelMapper(new CategoryModelMapper());
     private final CredentialRepository credentialRepository = Mockito.mock(CredentialRepository.class);
-    private final EmailNotificationSender emailNotificationSender = Mockito.mock(EmailNotificationSender.class);
+    private final NotificationService notificationService = Mockito.mock(NotificationService.class);
     private final Crypto crypto = Mockito.mock(Crypto.class);
-    private final UserService userService = new UserServiceImpl(userRepository,passwordEncoder,emailNotificationSender,crypto,credentialRepository);
+    private final UserService userService = new UserServiceImpl(
+            userRepository,
+            passwordEncoder,
+            crypto,
+            credentialRepository,
+            notificationService
+    );
     private final User defaultUser = UserBuilder.anUser().defaultUser();
 
     /**

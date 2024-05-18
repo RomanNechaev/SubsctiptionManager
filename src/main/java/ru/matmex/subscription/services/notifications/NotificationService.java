@@ -1,44 +1,30 @@
 package ru.matmex.subscription.services.notifications;
 
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
- * Брокер который управляет уведомлениями и отправляет их нужным подписчикам
+ * Сервис для управление уведомлениями и отправки подписчикам
  */
-public class NotificationBroker {
-    private static volatile NotificationBroker instance = null;
+@Service
+public class NotificationService {
     private final Queue<Notification> notifications;
     private final List<NotificationSender> notificationSenderList;
 
-    private NotificationBroker() {
+    public NotificationService() {
         this.notifications = new ConcurrentLinkedQueue<>();
         this.notificationSenderList = new ArrayList<>();
     }
 
     /**
-     * Получить экземляр объекта
-     * <p>Класс {@link NotificationBroker} реализует паттерн Singleton</p>
-     *
-     * @return экземпляр класса
-     */
-    public static NotificationBroker getInstance() {
-        if (instance == null) {
-            synchronized (NotificationBroker.class) {
-                if (instance == null) {
-                    instance = new NotificationBroker();
-                }
-            }
-        }
-        return instance;
-    }
-
-    /**
      * Добавить уведомление в очередь
      */
-    public synchronized void addNotification(Notification notification) {
+    public void addNotification(Notification notification) {
         notifications.add(notification);
     }
 
@@ -47,15 +33,15 @@ public class NotificationBroker {
      *
      * @return уведомление
      */
-    private Notification getNotification() {
+    private Notification getLastNotification() {
         return notifications.poll();
     }
 
     /**
      * Уведомить всех рассыльщиков
      */
-    public synchronized void notifyAllSubscriber() {
-        Notification lastNotification = getNotification();
+    public void notifyAllSubscriber() {
+        Notification lastNotification = getLastNotification();
         for (NotificationSender sender : notificationSenderList) {
             sender.sendNotification(lastNotification);
         }
@@ -77,5 +63,17 @@ public class NotificationBroker {
      */
     public void removeNotificationSender(NotificationSender sender) {
         notificationSenderList.remove(sender);
+    }
+
+
+    /**
+     * Зарегистировать уведомление
+     *
+     * @param message  - уведомление
+     * @param userId - идентификатор пользователя
+     */
+    public void registerNotification(String message, Long userId) {
+        addNotification(new Notification(message, userId));
+        notifyAllSubscriber();
     }
 }

@@ -12,6 +12,9 @@ import ru.matmex.subscription.models.user.UserUpdateModel;
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * Сервис для работы с данными пользователей
+ */
 public interface UserService extends UserDetailsService {
     /**
      * Добавить пользователя
@@ -30,7 +33,15 @@ public interface UserService extends UserDetailsService {
     UserModel updateUser(UserUpdateModel userUpdateModel);
 
     /**
-     * Получить пользователя по имени
+     * Получить модель пользователя по id
+     *
+     * @param userId - идентификатор пользователя
+     * @return информация о пользователе
+     */
+    UserModel getUserModel(Long userId);
+
+    /**
+     * Получить модель пользователя по имени
      *
      * @param username - имя пользователя
      * @return информация о пользователе
@@ -38,6 +49,8 @@ public interface UserService extends UserDetailsService {
     UserModel getUserModel(String username);
 
     User getUser(String username) throws UsernameNotFoundException;
+
+    User getUser(Long id) throws UsernameNotFoundException;
 
     /**
      * Получить пользователя в текущей сессии
@@ -64,7 +77,7 @@ public interface UserService extends UserDetailsService {
 
     boolean checkIntegrationWithTelegram();
 
-    void setTelegramChatId(String username, long telegramChatId);
+    void setTelegramChatId(User user, long telegramChatId);
 
     /**
      * Получить реквизиты для входа в гугл аккаунт текущего пользователя

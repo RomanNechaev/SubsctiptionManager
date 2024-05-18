@@ -2,7 +2,6 @@ package ru.matmex.subscription.services.impl;
 
 import com.google.api.client.auth.oauth2.Credential;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -22,8 +21,7 @@ import ru.matmex.subscription.models.user.UserUpdateModel;
 import ru.matmex.subscription.repositories.CredentialRepository;
 import ru.matmex.subscription.repositories.UserRepository;
 import ru.matmex.subscription.services.UserService;
-import ru.matmex.subscription.services.notifications.Notifiable;
-import ru.matmex.subscription.services.notifications.email.EmailNotificationSender;
+import ru.matmex.subscription.services.notifications.NotificationService;
 import ru.matmex.subscription.services.utils.mapping.CategoryModelMapper;
 import ru.matmex.subscription.services.utils.mapping.UserModelMapper;
 
@@ -38,26 +36,30 @@ import java.util.stream.Collectors;
  * Реализация сервиса для операций с пользователем
  */
 @Service
-public class UserServiceImpl extends Notifiable implements UserService {
+public class UserServiceImpl implements UserService {
+
+    public static final Random RANDOM = new Random();
 
     private final UserRepository userRepository;
     private final CredentialRepository credentialRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserModelMapper userModelMapper;
     private final Crypto crypto;
+    private final NotificationService notificationService;
 
     @Autowired
-    public UserServiceImpl(UserRepository userRepository,
-                           PasswordEncoder passwordEncoder,
-                           @Lazy EmailNotificationSender emailSender,
-                           Crypto crypto,
-                           CredentialRepository credentialRepository) {
+    public UserServiceImpl(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            Crypto crypto,
+            CredentialRepository credentialRepository, NotificationService notificationService
+    ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.notificationService = notificationService;
         this.userModelMapper = new UserModelMapper(new CategoryModelMapper());
         this.credentialRepository = credentialRepository;
         createAdmin();
-        addNotificationSender(emailSender);
         this.crypto = crypto;
     }
 
@@ -70,9 +72,7 @@ public class UserServiceImpl extends Notifiable implements UserService {
      */
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository
-                .findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User with name:" + username + "not found"));
+        User user = getUser(username);
         return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(), mapRolesToAuthorities(user.getRoles()));
     }
 
@@ -87,15 +87,15 @@ public class UserServiceImpl extends Notifiable implements UserService {
                 passwordEncoder.encode(userRegistrationModel.password()),
                 crypto.encrypt(secretKey.getBytes(StandardCharsets.UTF_8)));
         userRepository.save(user);
-        registerNotification("Вы успешно зарегистрировались в приложении! \n Ваш секретный ключ для тг: " + secretKey, userRegistrationModel.username());
+        notificationService.registerNotification(
+                "Вы успешно зарегистрировались в приложении! \n Ваш секретный ключ для тг: " + secretKey,
+                userRegistrationModel.email());
         return userModelMapper.map(user);
     }
 
     @Override
     public UserModel updateUser(UserUpdateModel userUpdateModel) {
-        User user = userRepository
-                .getById(userUpdateModel.id())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        User user = getUser(userUpdateModel.id());
         user.setUsername(userUpdateModel.name());
         user.setEmail(userUpdateModel.email());
         userRepository.save(user);
@@ -103,13 +103,26 @@ public class UserServiceImpl extends Notifiable implements UserService {
     }
 
     @Override
+    public UserModel getUserModel(Long id) {
+        return userModelMapper
+                .map(getUser(id));
+    }
+
+    @Override
     public UserModel getUserModel(String username) {
         return userModelMapper
-                .map(userRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("User not found")));
+                .map(getUser(username));
     }
 
     public User getUser(String username) throws UsernameNotFoundException {
-        return userRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        return userRepository
+                .findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User with name:" + username + "not found"));
+    }
+
+    @Override
+    public User getUser(Long id) throws UsernameNotFoundException {
+        return userRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 
     /**
@@ -128,25 +141,20 @@ public class UserServiceImpl extends Notifiable implements UserService {
     @Override
     public User getCurrentUser() {
         Authentication user = SecurityContextHolder.getContext().getAuthentication();
-        return userRepository
-                .findByUsername(user.getName())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        return getUser(user.getName());
     }
 
-    public void setTelegramChatId(String username, long telegramChatId) {
-        User user = userRepository
-                .findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    @Override
+    public void setTelegramChatId(User user, long telegramChatId) {
         user.setTelegramChatId(telegramChatId);
         userRepository.save(user);
     }
 
     private String createSecretTelegramKey() {
-        Random r = new Random();
         StringBuilder sb = new StringBuilder();
         int length = 16;
         while (sb.length() < length) {
-            sb.append(Integer.toHexString(r.nextInt()));
+            sb.append(Integer.toHexString(RANDOM.nextInt()));
         }
         return sb.toString();
     }
@@ -156,9 +164,9 @@ public class UserServiceImpl extends Notifiable implements UserService {
         if (!userRepository.existsByUsername(username)) {
             throw new UsernameNotFoundException("User with" + username + " not found");
         }
-        User user = userRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        User user = getUser(username);
         userRepository.delete(user);
-        registerNotification("Пользователь " + username + " успешно удален", username);
+        notificationService.registerNotification("Пользователь " + username + " успешно удален", username);
         return "Пользователь успешно удален!";
     }
 
@@ -177,9 +185,7 @@ public class UserServiceImpl extends Notifiable implements UserService {
 
     @Override
     public GoogleCredential getGoogleCredential(String username) {
-        User user = userRepository
-                .findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User with name:" + username + "not found"));
+        User user = getUser(username);
         return user.getGoogleCredential();
     }
 

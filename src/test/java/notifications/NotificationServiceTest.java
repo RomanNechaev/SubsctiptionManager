@@ -2,12 +2,17 @@ package notifications;
 
 import org.junit.jupiter.api.Test;
 import ru.matmex.subscription.services.notifications.Notification;
-import ru.matmex.subscription.services.notifications.NotificationBroker;
+import ru.matmex.subscription.services.notifications.NotificationService;
 
 import static org.assertj.core.api.Assertions.*;
 
-public class NotificationBrokerTest {
-    NotificationBroker notificationBroker = NotificationBroker.getInstance();
+class NotificationServiceTest {
+
+    private final NotificationService notificationService;
+
+    public NotificationServiceTest() {
+        this.notificationService = new NotificationService();
+    }
 
     /**
      * Тестирование уведомления рассыльщиков
@@ -15,13 +20,13 @@ public class NotificationBrokerTest {
     @Test
     void testNotifyAllSubscribers() {
         FakeSender sender = new FakeSender();
-        Notification testNotification = new Notification("test", "testUser");
-        Notification testNotification2 = new Notification("test2", "testUser2");
-        notificationBroker.addNotification(testNotification);
-        notificationBroker.addNotification(testNotification2);
-        notificationBroker.addNotificationSender(sender);
+        Notification testNotification = new Notification("test", 1L);
+        Notification testNotification2 = new Notification("test2", 2L);
+        notificationService.addNotification(testNotification);
+        notificationService.addNotification(testNotification2);
+        notificationService.addNotificationSender(sender);
 
-        notificationBroker.notifyAllSubscriber();
+        notificationService.notifyAllSubscriber();
 
         assertThat(sender.getMessagesToSend().size()).isEqualTo(1);
 
@@ -35,7 +40,7 @@ public class NotificationBrokerTest {
     void testCanNotifyAllSubscribersIfSenderListIsEmpty() {
         FakeSender sender = new FakeSender();
 
-        notificationBroker.notifyAllSubscriber();
+        notificationService.notifyAllSubscriber();
 
         assertThat(sender.getMessagesToSend()).isEmpty();
     }

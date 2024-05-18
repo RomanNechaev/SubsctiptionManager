@@ -14,26 +14,6 @@ import java.util.Set;
 @Entity
 @Table(name = "users")
 public class User {
-    public User() {
-    }
-
-    public User(String username, String email, String password, byte[] telegramSecretKey) {
-        this.username = username;
-        this.email = email;
-        this.password = password;
-        this.categories = new ArrayList<>();
-        this.telegramSecretKey = telegramSecretKey;
-        roles.add(Role.USER);
-    }
-
-    public User(String username, String email, String password, Role role) {
-        this.username = username;
-        this.email = email;
-        this.password = password;
-        this.categories = new ArrayList<>();
-        roles.add(role);
-    }
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -45,17 +25,20 @@ public class User {
     @JoinColumn(name = "google_credential_id")
     private GoogleCredential googleCredential;
     private String password;
-
+    /**
+     * Секретный ключ пользователя для привязки его телеграмм аккаунта
+     * Генерируется один раз при привязки телеграмм аккаунта
+     */
     private byte[] telegramSecretKey;
 
     private String email;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Category> categories;
 
     @ElementCollection(targetClass = Role.class, fetch = FetchType.EAGER)
     @CollectionTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"))
     @Enumerated(EnumType.STRING)
-
     private Set<Role> roles = new HashSet<>();
 
     public Long getId() {
@@ -114,4 +97,23 @@ public class User {
         return telegramSecretKey;
     }
 
+    public User() {
+    }
+
+    public User(String username, String email, String password, byte[] telegramSecretKey) {
+        this.username = username;
+        this.email = email;
+        this.password = password;
+        this.categories = new ArrayList<>();
+        this.telegramSecretKey = telegramSecretKey;
+        roles.add(Role.USER);
+    }
+
+    public User(String username, String email, String password, Role role) {
+        this.username = username;
+        this.email = email;
+        this.password = password;
+        this.categories = new ArrayList<>();
+        roles.add(role);
+    }
 }

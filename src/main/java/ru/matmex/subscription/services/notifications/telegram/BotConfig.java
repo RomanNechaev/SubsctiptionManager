@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Конфигурация телеграмм бота
+ * Конфигурация телеграм бота
  */
 @Configuration
 public class BotConfig {
