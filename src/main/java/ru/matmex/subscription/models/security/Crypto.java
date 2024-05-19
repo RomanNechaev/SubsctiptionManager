@@ -35,7 +35,7 @@ public class Crypto {
         try {
             return encryptCipher.doFinal(plainText);
         } catch (Exception e) {
-            throw new RuntimeException("Не удалось зашифровать данные!",e);
+            throw new CryptoException("Не удалось зашифровать данные!");
         }
     }
 
@@ -49,7 +49,7 @@ public class Crypto {
         try {
             return decryptCipher.doFinal(encryptedText);
         } catch (Exception e) {
-            throw new RuntimeException("Не удалось расшифровать данные!",e);
+            throw new CryptoException("Не удалось расшифровать данные!");
         }
     }
 
@@ -65,8 +65,7 @@ public class Crypto {
             cipher.init(mode, secretKey);
             return cipher;
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException e) {
-              throw new RuntimeException(e);
-//            throw new CryptoException("Не удалось создать шифр");
+            throw new CryptoException("Не удалось создать шифр");
         }
     }
 }
