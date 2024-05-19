@@ -21,7 +21,7 @@ public class CommandHandler {
      *
      * @param messageText - сообщения от пользователя
      * @param chatId      - id чата в тг
-     * @param userService - сервис для операция с пользователями
+     * @param userService - сервис для для работы с пользователями
      * @param crypto      - сервис для шифрования/дешифрования текста
      * @return получилось ли привязать бота
      */
@@ -40,7 +40,7 @@ public class CommandHandler {
                 boolean match = decodedKey.equals(key);
                 if (currentUser.getTelegramChatId() == null && match) {
                     bot.sendMessage(chatId, "Вы успешно привязали бота!");
-                    userService.setTelegramChatId(currentUser.getUsername(), chatId);
+                    userService.setTelegramChatId(currentUser, chatId);
                     return true;
                 } else {
                     if (!match) {
