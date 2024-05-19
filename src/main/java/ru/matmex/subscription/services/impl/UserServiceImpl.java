@@ -12,24 +12,16 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import ru.matmex.subscription.entities.GoogleCredential;
 import ru.matmex.subscription.entities.User;
-import ru.matmex.subscription.models.security.Crypto;
-import ru.matmex.subscription.models.user.Role;
-import ru.matmex.subscription.models.user.UserModel;
-import ru.matmex.subscription.models.user.UserRegistrationModel;
-import ru.matmex.subscription.models.user.UserUpdateModel;
-import ru.matmex.subscription.repositories.CredentialRepository;
+import ru.matmex.subscription.models.user.*;
 import ru.matmex.subscription.repositories.UserRepository;
+import ru.matmex.subscription.services.CategoryService;
 import ru.matmex.subscription.services.UserService;
 import ru.matmex.subscription.services.notifications.NotificationService;
 import ru.matmex.subscription.services.utils.mapping.CategoryModelMapper;
 import ru.matmex.subscription.services.utils.mapping.UserModelMapper;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Optional;
-import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -42,7 +34,6 @@ public class UserServiceImpl implements UserService {
     public static final Random RANDOM = new Random();
 
     private final UserRepository userRepository;
-    private final CredentialRepository credentialRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserModelMapper userModelMapper;
     private final Crypto crypto;
@@ -60,13 +51,13 @@ public class UserServiceImpl implements UserService {
         this.passwordEncoder = passwordEncoder;
         this.notificationService = notificationService;
         this.userModelMapper = new UserModelMapper(new CategoryModelMapper());
-        this.credentialRepository = credentialRepository;
+        this.categoryService = categoryService;
         createAdmin();
         this.crypto = crypto;
     }
 
     /**
-     * Загрузить пользователя по имени
+     * Найти пользователя по имени
      *
      * @param username - имя пользователя
      * @return авторизовачная информация о пользователе
@@ -83,11 +74,9 @@ public class UserServiceImpl implements UserService {
         if (userRepository.existsByUsername(userRegistrationModel.username())) {
             throw new AuthenticationServiceException("Пользователь с таким именем уже существует");
         }
-        String secretKey = createSecretTelegramKey();
         User user = new User(userRegistrationModel.username(),
                 userRegistrationModel.email(),
-                passwordEncoder.encode(userRegistrationModel.password()),
-                crypto.encrypt(secretKey.getBytes(StandardCharsets.UTF_8)));
+                passwordEncoder.encode(userRegistrationModel.password()));
         userRepository.save(user);
         notificationService.registerNotification(
                 "Вы успешно зарегистрировались в приложении! \n Ваш секретный ключ для тг: " + secretKey,
@@ -115,7 +104,8 @@ public class UserServiceImpl implements UserService {
         return userModelMapper
                 .map(getUser(username));
     }
-
+    
+    @Override
     public User getUser(String username) throws UsernameNotFoundException {
         return userRepository
                 .findByUsername(username)
@@ -126,7 +116,7 @@ public class UserServiceImpl implements UserService {
     public User getUser(Long id) throws UsernameNotFoundException {
         return userRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
-
+      
     /**
      * Преобразовать роль к авторизационной роли spring-security
      *
@@ -180,33 +170,33 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public GoogleCredential getGoogleCredential() {
+    public GoogleCredentialModel getGoogleCredentialCurrentUser() {
         User currentUser = getCurrentUser();
-        return currentUser.getGoogleCredential();
+        return getGoogleCredential(currentUser.getId());
     }
 
     @Override
-    public GoogleCredential getGoogleCredential(String username) {
-        User user = getUser(username);
-        return user.getGoogleCredential();
+    public GoogleCredentialModel getGoogleCredential(Long id) {
+        User user = userRepository
+                .getById(id)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        return new GoogleCredentialModel(user.getAccessToken(),
+                user.getExpirationTimeMilliseconds(),
+                user.getRefreshToken());
     }
 
     @Override
     public void setGoogleCredential(Credential credential) {
-        User currentUser = getCurrentUser();
-        GoogleCredential newCredential = new GoogleCredential(credential.getAccessToken(), credential.getExpirationTimeMilliseconds(), credential.getRefreshToken());
-        currentUser.setGoogleCredential(newCredential);
-        credentialRepository.save(newCredential);
+        User user = getCurrentUser();
+        user.setAccessToken(credential.getAccessToken());
+        user.setExpirationTimeMilliseconds(credential.getExpirationTimeMilliseconds());
+        user.setRefreshToken(credential.getRefreshToken());
+        userRepository.save(user);
     }
 
     @Override
-    public String getInformationAboutGoogle() {
-        return getCurrentUser().getGoogleCredential() == null ? "гугл аккаунт не привязан" : "гугл аккаунт успешно привязан";
-    }
-
-    @Override
-    public boolean checkIntegrationWithTelegram() {
-        return Optional.ofNullable(getCurrentUser().getTelegramChatId()).isPresent();
+    public boolean isGoogleAccountLinked(Long id) {
+        return getGoogleCredential(id) == null;
     }
 
     /**

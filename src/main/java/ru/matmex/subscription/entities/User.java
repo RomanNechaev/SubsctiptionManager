@@ -1,5 +1,6 @@
 package ru.matmex.subscription.entities;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import jakarta.persistence.*;
 import ru.matmex.subscription.models.user.Role;
 
@@ -14,16 +15,32 @@ import java.util.Set;
 @Entity
 @Table(name = "users")
 public class User {
+  
+    public User() {
+    }
+
+    public User(String username, String email, String password) {
+        this.username = username;
+        this.email = email;
+        this.password = password;
+        this.categories = new ArrayList<>();
+        roles.add(Role.USER);
+    }
+
+    public User(String username, String email, String password, Role role) {
+        this.username = username;
+        this.email = email;
+        this.password = password;
+        this.categories = new ArrayList<>();
+        roles.add(role);
+    }
+  
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String username;
 
-    private Long telegramChatId;
-    @OneToOne
-    @JoinColumn(name = "google_credential_id")
-    private GoogleCredential googleCredential;
     private String password;
     /**
      * Секретный ключ пользователя для привязки его телеграмм аккаунта
@@ -33,6 +50,10 @@ public class User {
 
     private String email;
 
+    private String accessToken;
+    private Long expirationTimeMilliseconds;
+    private String refreshToken;
+  
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Category> categories;
 
@@ -77,43 +98,27 @@ public class User {
         return categories;
     }
 
-    public GoogleCredential getGoogleCredential() {
-        return googleCredential;
+    public String getAccessToken() {
+        return accessToken;
     }
 
-    public void setGoogleCredential(GoogleCredential googleCredential) {
-        this.googleCredential = googleCredential;
+    public void setAccessToken(String accessToken) {
+        this.accessToken = accessToken;
     }
 
-    public Long getTelegramChatId() {
-        return telegramChatId;
+    public Long getExpirationTimeMilliseconds() {
+        return expirationTimeMilliseconds;
     }
 
-    public void setTelegramChatId(long telegramChatId) {
-        this.telegramChatId = telegramChatId;
+    public void setExpirationTimeMilliseconds(Long expirationTimeMilliseconds) {
+        this.expirationTimeMilliseconds = expirationTimeMilliseconds;
     }
 
-    public byte[] getTelegramSecretKey() {
-        return telegramSecretKey;
+    public String getRefreshToken() {
+        return refreshToken;
     }
 
-    public User() {
-    }
-
-    public User(String username, String email, String password, byte[] telegramSecretKey) {
-        this.username = username;
-        this.email = email;
-        this.password = password;
-        this.categories = new ArrayList<>();
-        this.telegramSecretKey = telegramSecretKey;
-        roles.add(Role.USER);
-    }
-
-    public User(String username, String email, String password, Role role) {
-        this.username = username;
-        this.email = email;
-        this.password = password;
-        this.categories = new ArrayList<>();
-        roles.add(role);
+    public void setRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
     }
 }

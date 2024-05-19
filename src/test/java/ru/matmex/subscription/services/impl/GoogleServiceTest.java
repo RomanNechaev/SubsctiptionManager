@@ -3,7 +3,7 @@ package ru.matmex.subscription.services.impl;
 import com.google.api.services.calendar.model.Event;
 import org.junit.jupiter.api.Test;
 import ru.matmex.subscription.models.subscription.SubscriptionModel;
-import ru.matmex.subscription.services.utils.GoogleUtils;
+import ru.matmex.subscription.services.utils.GoogleEventGenerator;
 import ru.matmex.subscription.services.utils.mapping.SubscriptionModelMapper;
 import ru.matmex.subscription.utils.SubscriptionBuilder;
 
@@ -11,7 +11,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class GoogleServiceTest {
-    private static final GoogleUtils googleUtils = new GoogleUtils();
+    private static final GoogleEventGenerator GOOGLE_EVENT_SHAPER = new GoogleEventGenerator();
     private static final SubscriptionModelMapper subscriptionModelMapper = new SubscriptionModelMapper();
 
     /**
@@ -21,7 +21,7 @@ class GoogleServiceTest {
     void testDefaultSubscription() {
         SubscriptionModel subscription = subscriptionModelMapper.map(
                 SubscriptionBuilder.anSubscription().defaultSubscription());
-        Event event = googleUtils.subscriptionFormationAsEvents(subscription);
+        Event event = GOOGLE_EVENT_SHAPER.createGoogleEvents(subscription);
         assertThat(event.getSummary()).isEqualTo("test");
         assertThat(event.getDescription()).isEqualTo("Стоимость: 12.0");
         assertFalse(event.isEndTimeUnspecified());
@@ -35,7 +35,7 @@ class GoogleServiceTest {
 
         SubscriptionModel subscription = subscriptionModelMapper.map(
                 SubscriptionBuilder.anSubscription().defaultSubscription());
-        Event event = googleUtils.subscriptionFormationAsEvents(subscription);
+        Event event = GOOGLE_EVENT_SHAPER.createGoogleEvents(subscription);
 
         long expectedStartDate = subscription.paymentDate().getTime() + 123;
         long expectedEndDate = expectedStartDate + 86400000;
@@ -52,7 +52,7 @@ class GoogleServiceTest {
 
         SubscriptionModel subscription = subscriptionModelMapper.map(
                 SubscriptionBuilder.anSubscription().defaultSubscription());
-        Event event = googleUtils.subscriptionFormationAsEvents(subscription);
+        Event event = GOOGLE_EVENT_SHAPER.createGoogleEvents(subscription);
 
         long wrongStartDate = subscription.paymentDate().getTime();
         long wrongEndDate = wrongStartDate + 172800; // 2 дня

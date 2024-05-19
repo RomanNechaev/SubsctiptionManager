@@ -2,14 +2,12 @@ package ru.matmex.subscription.services;
 
 import com.google.api.client.auth.oauth2.Credential;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import ru.matmex.subscription.entities.GoogleCredential;
 import ru.matmex.subscription.entities.User;
+import ru.matmex.subscription.models.user.GoogleCredentialModel;
 import ru.matmex.subscription.models.user.UserModel;
 import ru.matmex.subscription.models.user.UserRegistrationModel;
 import ru.matmex.subscription.models.user.UserUpdateModel;
 
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -46,9 +44,7 @@ public interface UserService extends UserDetailsService {
      * @param username - имя пользователя
      * @return информация о пользователе
      */
-    UserModel getUserModel(String username);
-
-    User getUser(String username) throws UsernameNotFoundException;
+    UserModel getUser(String username);
 
     User getUser(Long id) throws UsernameNotFoundException;
 
@@ -75,29 +71,30 @@ public interface UserService extends UserDetailsService {
      */
     List<UserModel> getUsers();
 
-    boolean checkIntegrationWithTelegram();
-
     void setTelegramChatId(User user, long telegramChatId);
 
     /**
      * Получить реквизиты для входа в гугл аккаунт текущего пользователя
      */
-    GoogleCredential getGoogleCredential() throws IOException;
+    GoogleCredentialModel getGoogleCredentialCurrentUser();
 
     /**
      * Получить реквизиты для входа в гугл аккаунт
      *
-     * @param username - имя пользователя
+     * @param id - id пользователя
      */
-    GoogleCredential getGoogleCredential(String username) throws IOException;
+    GoogleCredentialModel getGoogleCredential(Long id);
 
     /**
      * Присвоить текущему пользователю реквизиты для входа в гугл аккаунт
+     *
+     * @param credential - учетные данные гугл аккаунта полученные от гугл сервиса
      */
-    void setGoogleCredential(Credential credential) throws IOException;
+    void setGoogleCredential(Credential credential);
 
     /**
-     * Получить информацю о привязки гугл аккаунта
+     * Узнать привязан ли гугл-аккаунт у пользователя 
+     * @param id пользователя
      */
-    String getInformationAboutGoogle();
+    boolean isGoogleAccountLinked(Long id);
 }
