@@ -2,6 +2,7 @@ package ru.matmex.subscription.models.security;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import ru.matmex.subscription.services.impl.exception.CryptoException;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
@@ -14,8 +15,8 @@ import java.security.NoSuchAlgorithmException;
  */
 @Component
 public class Crypto {
-    private static Cipher encryptCipher;
-    private static Cipher decryptCipher;
+    private final Cipher encryptCipher;
+    private final Cipher decryptCipher;
     private final SecretKeySpec secretKey;
 
     public Crypto(@Value("${crypto.secretkey}") String rawSecretKey) {
@@ -58,14 +59,13 @@ public class Crypto {
      * @return - инициализированный шифр
      */
     private Cipher initCipher(int mode) {
-        Cipher cipher;
-        try {
-            cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
-            cipher.init(mode, secretKey);
-        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException e) {
-            throw new RuntimeException("Не удалось создать шифр", e);
-        }
 
-        return cipher;
+        try {
+            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+            cipher.init(mode, secretKey);
+            return cipher;
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException e) {
+            throw new CryptoException("Не удалось создать шифр");
+        }
     }
 }

@@ -84,7 +84,6 @@ public class TelegramBot extends TelegramLongPollingBot implements NotificationS
         String message = notification.getMessage() + "\nДата отправки события: " + notification.getDate();
         Long chatId = userService.getUserModel(notification.getUserId()).tgId();
         sendMessage(chatId, message);
-        sendMessage(123L, "123");
     }
 
 }

@@ -10,7 +10,7 @@ import ru.matmex.subscription.models.category.UpdateCategoryModel;
 import java.util.List;
 
 /**
- * Серис для работы с категориями
+ * Сервис для работы с категориями
  */
 public interface CategoryService {
 

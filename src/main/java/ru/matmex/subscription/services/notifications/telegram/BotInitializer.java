@@ -9,6 +9,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 import ru.matmex.subscription.models.security.Crypto;
 import ru.matmex.subscription.services.UserService;
+import ru.matmex.subscription.services.impl.exception.BotInitException;
 import ru.matmex.subscription.services.notifications.NotificationService;
 
 /**
@@ -39,7 +40,7 @@ public class BotInitializer {
         try {
             telegramBotsApi.registerBot(telegramBot);
         } catch (TelegramApiException e) {
-            throw new RuntimeException("Не удалось инициализировать телеграмм бота",e);
+            throw new BotInitException("Не удалось инициализировать телеграмм бота");
         }
     }
 }
