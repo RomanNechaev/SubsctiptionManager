@@ -1,5 +1,6 @@
 package ru.matmex.subscription.services.notifications;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
@@ -14,11 +15,12 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 @Service
 public class NotificationService {
     private final Queue<Notification> notifications;
-    private final List<NotificationSender> notificationSenderList;
+    private final NotificationSenderManager notificationSenderManager;
 
-    public NotificationService() {
+    @Autowired
+    public NotificationService(NotificationSenderManager notificationSenderManager) {
+        this.notificationSenderManager = notificationSenderManager;
         this.notifications = new ConcurrentLinkedQueue<>();
-        this.notificationSenderList = new ArrayList<>();
     }
 
     /**
@@ -42,29 +44,10 @@ public class NotificationService {
      */
     public void notifyAllSubscriber() {
         Notification lastNotification = getLastNotification();
-        for (NotificationSender sender : notificationSenderList) {
+        for (NotificationSender sender : notificationSenderManager.getNotificationSenderList()) {
             sender.sendNotification(lastNotification);
         }
     }
-
-    /**
-     * Добавить рассыльщика уведомлений
-     *
-     * @param sender - рассыльщик уведомлений
-     */
-    public void addNotificationSender(NotificationSender sender) {
-        notificationSenderList.add(sender);
-    }
-
-    /**
-     * Удалить рассыльщика уведомлений
-     *
-     * @param sender - рассыльщик уведомлений
-     */
-    public void removeNotificationSender(NotificationSender sender) {
-        notificationSenderList.remove(sender);
-    }
-
 
     /**
      * Зарегистировать уведомление

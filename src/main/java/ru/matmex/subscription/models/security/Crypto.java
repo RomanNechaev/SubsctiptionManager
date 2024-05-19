@@ -65,7 +65,8 @@ public class Crypto {
             cipher.init(mode, secretKey);
             return cipher;
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException e) {
-            throw new CryptoException("Не удалось создать шифр");
+              throw new RuntimeException(e);
+//            throw new CryptoException("Не удалось создать шифр");
         }
     }
 }

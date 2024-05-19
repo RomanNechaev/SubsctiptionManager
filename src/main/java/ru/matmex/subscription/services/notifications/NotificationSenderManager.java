@@ -11,10 +11,14 @@ import java.util.List;
  */
 @Configuration
 public class NotificationSenderManager {
+    public List<NotificationSender> getNotificationSenderList() {
+        return notificationSenderList;
+    }
+
     private final List<NotificationSender> notificationSenderList;
 
     @Autowired
-    public NotificationSenderManager(List<NotificationSender> notificationSenderList, UserEmailNotificationSender emailNotificationSender) {
+    public NotificationSenderManager(List<NotificationSender> notificationSenderList, NotificationSender emailNotificationSender) {
         this.notificationSenderList = notificationSenderList;
 
         registerNotificationSender(emailNotificationSender);
@@ -25,7 +29,7 @@ public class NotificationSenderManager {
      *
      * @param sender - рассыльщик уведомлений
      */
-    private void registerNotificationSender(NotificationSender sender) {
+    public void registerNotificationSender(NotificationSender sender) {
         notificationSenderList.add(sender);
     }
 }

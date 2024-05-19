@@ -9,6 +9,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ru.matmex.subscription.models.security.Crypto;
 import ru.matmex.subscription.services.UserService;
 import ru.matmex.subscription.services.notifications.Notification;
+import ru.matmex.subscription.services.notifications.NotificationSenderManager;
 import ru.matmex.subscription.services.notifications.NotificationService;
 import ru.matmex.subscription.services.notifications.NotificationSender;
 
@@ -19,15 +20,19 @@ public class TelegramBot extends TelegramLongPollingBot implements NotificationS
     private final BotConfig botConfig;
     private final UserService userService;
     private final Crypto crypto;
-    private final NotificationService notificationService;
+    private final NotificationSenderManager notificationSenderManager;
     private final CommandHandler handler = new CommandHandler(this);
     private static final Logger logger = LoggerFactory.getLogger(TelegramBot.class);
 
-    public TelegramBot(BotConfig botConfig, UserService userService, Crypto crypto, NotificationService notificationService) {
+    public TelegramBot(BotConfig botConfig,
+                       UserService userService,
+                       Crypto crypto,
+                       NotificationSenderManager notificationSenderManager
+    ) {
         this.botConfig = botConfig;
         this.userService = userService;
         this.crypto = crypto;
-        this.notificationService = notificationService;
+        this.notificationSenderManager = notificationSenderManager;
     }
 
     @Override
@@ -47,7 +52,7 @@ public class TelegramBot extends TelegramLongPollingBot implements NotificationS
             Long chatId = update.getMessage().getChatId();
             boolean isLinked = handler.processCommand(messageText, chatId, userService, crypto);
             if (isLinked) {
-                notificationService.addNotificationSender(this);
+                notificationSenderManager.registerNotificationSender(this);
             }
         }
     }

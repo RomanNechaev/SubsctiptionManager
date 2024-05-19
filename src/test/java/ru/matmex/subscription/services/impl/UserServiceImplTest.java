@@ -114,7 +114,7 @@ class UserServiceImplTest {
         String oldEmail = "test@gmail.com";
         User user = new User("test", oldEmail, "123", "123".getBytes());
 
-        when(userRepository.getById(12L)).thenReturn(Optional.of(user));
+        when(userRepository.findById(12L)).thenReturn(Optional.of(user));
 
         userService.updateUser(userUpdateModel);
 
@@ -146,7 +146,7 @@ class UserServiceImplTest {
 
         assertThatThrownBy(() -> userService.getUserModel(username))
                 .isInstanceOf(UsernameNotFoundException.class)
-                .hasMessage("User not found");
+                .hasMessage("User with name:"+username+ "not found");
     }
 
     /**

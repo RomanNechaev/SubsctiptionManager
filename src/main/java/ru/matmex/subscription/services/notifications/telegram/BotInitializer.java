@@ -10,6 +10,7 @@ import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 import ru.matmex.subscription.models.security.Crypto;
 import ru.matmex.subscription.services.UserService;
 import ru.matmex.subscription.services.impl.exception.BotInitException;
+import ru.matmex.subscription.services.notifications.NotificationSenderManager;
 import ru.matmex.subscription.services.notifications.NotificationService;
 
 /**
@@ -20,14 +21,14 @@ public class BotInitializer {
     private final BotConfig botConfig;
     private final UserService userService;
     private final Crypto crypto;
-    private final NotificationService notificationService;
+    private final NotificationSenderManager notificationSenderManager;
 
     @Autowired
-    public BotInitializer(BotConfig botConfig, UserService userService, Crypto crypto, NotificationService notificationService) {
+    public BotInitializer(BotConfig botConfig, UserService userService, Crypto crypto, NotificationSenderManager notificationSenderManager) {
         this.botConfig = botConfig;
         this.userService = userService;
         this.crypto = crypto;
-        this.notificationService = notificationService;
+        this.notificationSenderManager = notificationSenderManager;
     }
 
     /**
@@ -35,7 +36,7 @@ public class BotInitializer {
      */
     @EventListener({ContextRefreshedEvent.class})
     public void init() throws TelegramApiException {
-        TelegramBot telegramBot = new TelegramBot(botConfig, userService, crypto, notificationService);
+        TelegramBot telegramBot = new TelegramBot(botConfig, userService, crypto, notificationSenderManager);
         TelegramBotsApi telegramBotsApi = new TelegramBotsApi(DefaultBotSession.class);
         try {
             telegramBotsApi.registerBot(telegramBot);

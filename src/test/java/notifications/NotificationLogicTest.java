@@ -2,16 +2,25 @@ package notifications;
 
 import org.junit.jupiter.api.Test;
 import ru.matmex.subscription.services.notifications.Notification;
+import ru.matmex.subscription.services.notifications.NotificationSender;
+import ru.matmex.subscription.services.notifications.NotificationSenderManager;
 import ru.matmex.subscription.services.notifications.NotificationService;
 
-import static org.assertj.core.api.Assertions.*;
+import java.util.ArrayList;
 
-class NotificationServiceTest {
+import static org.assertj.core.api.Assertions.*;
+class NotificationLogicTest {
 
     private final NotificationService notificationService;
+    private final NotificationSenderManager notificationSenderManager;
 
-    public NotificationServiceTest() {
-        this.notificationService = new NotificationService();
+    public NotificationLogicTest() {
+        NotificationSender fakeSender = notification -> {};
+        this.notificationSenderManager = new NotificationSenderManager(
+                new ArrayList<>(),
+                fakeSender
+        );
+        this.notificationService = new NotificationService(notificationSenderManager);
     }
 
     /**
@@ -24,7 +33,7 @@ class NotificationServiceTest {
         Notification testNotification2 = new Notification("test2", 2L);
         notificationService.addNotification(testNotification);
         notificationService.addNotification(testNotification2);
-        notificationService.addNotificationSender(sender);
+        notificationSenderManager.registerNotificationSender(sender);
 
         notificationService.notifyAllSubscriber();
 

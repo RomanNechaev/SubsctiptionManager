@@ -2,6 +2,7 @@ package ru.matmex.subscription.services.impl;
 
 import com.google.api.client.auth.oauth2.Credential;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -52,7 +53,8 @@ public class UserServiceImpl implements UserService {
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             Crypto crypto,
-            CredentialRepository credentialRepository, NotificationService notificationService
+            CredentialRepository credentialRepository,
+            @Lazy NotificationService notificationService
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -89,7 +91,7 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
         notificationService.registerNotification(
                 "Вы успешно зарегистрировались в приложении! \n Ваш секретный ключ для тг: " + secretKey,
-                userRegistrationModel.email());
+                user.getId());
         return userModelMapper.map(user);
     }
 
@@ -166,7 +168,7 @@ public class UserServiceImpl implements UserService {
         }
         User user = getUser(username);
         userRepository.delete(user);
-        notificationService.registerNotification("Пользователь " + username + " успешно удален", username);
+        notificationService.registerNotification("Пользователь " + username + " успешно удален", user.getId());
         return "Пользователь успешно удален!";
     }
 
