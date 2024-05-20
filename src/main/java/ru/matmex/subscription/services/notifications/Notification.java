@@ -8,25 +8,25 @@ import java.util.Date;
 public class Notification {
 
     private final String message;
-    private final Date date;
-    private final Long userId;
+    private final Date currentDate;
+    private final String username;
 
-    public Notification(String message, Long userId) {
+    public Notification(String message, String username) {
         this.message = message;
-        this.userId = userId;
-        this.date = new Date();
+        this.username = username;
+        this.currentDate = new Date();
     }
 
     public String getMessage() {
         return message;
     }
 
-    public Date getDate() {
-        return date;
+    public Date getCurrentDate() {
+        return currentDate;
     }
 
-    public Long getUserId() {
-        return userId;
+    public String getUsername() {
+        return username;
     }
 
 }

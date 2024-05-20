@@ -9,9 +9,6 @@ import ru.matmex.subscription.models.category.UpdateCategoryModel;
 
 import java.util.List;
 
-/**
- * Сервис для работы с категориями
- */
 public interface CategoryService {
 
     /**
@@ -46,7 +43,7 @@ public interface CategoryService {
     CategoryModel create(CreateCategoryModel createCategoryModel);
 
     /**
-     * Создать подписку по умолчанию
+     * Создать категорию по умолчанию
      *
      * @param user - Сущность юзера
      */

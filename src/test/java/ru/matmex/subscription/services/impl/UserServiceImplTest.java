@@ -23,9 +23,7 @@ import ru.matmex.subscription.models.user.UserUpdateModel;
 import ru.matmex.subscription.repositories.UserRepository;
 import ru.matmex.subscription.services.CategoryService;
 import ru.matmex.subscription.services.UserService;
-import ru.matmex.subscription.services.notifications.NotificationService;
 import ru.matmex.subscription.services.utils.mapping.CategoryModelMapper;
-import ru.matmex.subscription.services.notifications.email.UserEmailNotificationSender;
 import ru.matmex.subscription.services.utils.mapping.UserModelMapper;
 import ru.matmex.subscription.utils.UserBuilder;
 
@@ -44,16 +42,6 @@ class UserServiceImplTest {
     private final UserRepository userRepository = Mockito.mock(UserRepository.class);
     private final CategoryService categoryService  = Mockito.mock(CategoryService.class);
     private final PasswordEncoder passwordEncoder = Mockito.mock(PasswordEncoder.class);
-    private final UserModelMapper userModelMapper = new UserModelMapper(new CategoryModelMapper());
-    private final CredentialRepository credentialRepository = Mockito.mock(CredentialRepository.class);
-    private final NotificationService notificationService = Mockito.mock(NotificationService.class);
-    private final Crypto crypto = Mockito.mock(Crypto.class);
-    private final UserService userService = new UserServiceImpl(
-            userRepository,
-            passwordEncoder,
-            crypto,
-            credentialRepository,
-            notificationService
     private final UserService userService = new UserServiceImpl(userRepository,passwordEncoder,categoryService);
     private final User defaultUser = UserBuilder.anUser().defaultUser();
 
@@ -115,7 +103,7 @@ class UserServiceImplTest {
         String oldEmail = "test@gmail.com";
         User user = new User("test", oldEmail, "123");
 
-        when(userRepository.findById(12L)).thenReturn(Optional.of(user));
+        when(userRepository.getById(12L)).thenReturn(Optional.of(user));
 
         userService.updateUser(userUpdateModel);
 
@@ -147,7 +135,7 @@ class UserServiceImplTest {
 
         assertThatThrownBy(() -> userService.getUser(username))
                 .isInstanceOf(UsernameNotFoundException.class)
-                .hasMessage("User with name:"+username+ "not found");
+                .hasMessage("User not found");
     }
 
     /**
