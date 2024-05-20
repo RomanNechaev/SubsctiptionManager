@@ -4,7 +4,6 @@ import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -53,7 +52,6 @@ public class ExceptionApiHandler {
     }
 
     /**
-     *
      * @param exception ошибка связнная с аутентификацией
      * @return сообщание о том, что произошла ошибка аутентификации
      */

@@ -24,7 +24,6 @@ public class AuthEntryPointJwt implements AuthenticationEntryPoint {
     /**
      * В случаи неудачной аутинфикации в приложениие оповестить клиента
      *
-     *
      * @param request       запрос на аутентификацию
      * @param response      ответ
      * @param authException ошибка аутентификации
@@ -33,7 +32,7 @@ public class AuthEntryPointJwt implements AuthenticationEntryPoint {
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
                          AuthenticationException authException) throws IOException {
-        logger.error("Ошибка аутентификации " +authException.getMessage());
+        logger.error("Ошибка аутентификации " + authException.getMessage());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 

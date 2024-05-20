@@ -76,11 +76,14 @@ public class WebSecurityConfig {
                 .exceptionHandling().authenticationEntryPoint(unauthorizedHandler).and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
                 .authorizeHttpRequests()
+                .requestMatchers("/api/app/google").permitAll()
                 .requestMatchers("/auth/login").permitAll()
                 .requestMatchers("/registration").permitAll()
                 .requestMatchers("/api/app/**").hasRole("USER")
                 .requestMatchers(HttpMethod.DELETE, "/api/admin/app/**").hasRole("ADMIN")
-                .anyRequest().authenticated();
+                .anyRequest()
+                .authenticated()
+        ;
 
         http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
         return http.build();

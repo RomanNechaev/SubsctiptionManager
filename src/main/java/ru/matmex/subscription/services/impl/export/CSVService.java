@@ -32,7 +32,7 @@ public class CSVService implements ExportReportService {
     @Override
     public byte[] loadReport(String nameReport) {
         String userName = userService.getCurrentUser().getUsername();
-        UserModel user = userService.getUser(userName);
+        UserModel user = userService.getUserModel(userName);
         return reportToCSV(Report.valueOf(nameReport).calculate(user));
     }
 

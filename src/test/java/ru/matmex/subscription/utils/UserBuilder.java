@@ -3,6 +3,8 @@ package ru.matmex.subscription.utils;
 
 import ru.matmex.subscription.entities.User;
 
+import java.nio.charset.StandardCharsets;
+
 /**
  * Создание объекта пользователя
  */
@@ -12,6 +14,9 @@ public class UserBuilder {
     private String password;
 
     private String email;
+
+    private byte[] secretKey;
+
 
     private UserBuilder() {
     }
@@ -35,8 +40,13 @@ public class UserBuilder {
         return this;
     }
 
+    public UserBuilder withSecretKey(byte[] key) {
+        this.secretKey = key;
+        return this;
+    }
+
     public User build() {
-        return new User(username, password, email);
+        return new User(username, email, password, secretKey);
     }
 
     public User defaultUser() {
@@ -44,6 +54,7 @@ public class UserBuilder {
                 .withUsername("test")
                 .withEmail("test@gmail.com")
                 .withPassword("123")
+                .withSecretKey("123".getBytes())
                 .build();
     }
 

@@ -1,9 +1,9 @@
 package ru.matmex.subscription.services.impl;
-import org.junit.jupiter.api.Test;
+
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
@@ -16,31 +16,42 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ContextConfiguration;
 import ru.matmex.subscription.entities.User;
+import ru.matmex.subscription.models.security.Crypto;
+import ru.matmex.subscription.models.user.GoogleCredentialModel;
 import ru.matmex.subscription.models.user.UserModel;
 import ru.matmex.subscription.models.user.UserRegistrationModel;
 import ru.matmex.subscription.models.user.UserUpdateModel;
 import ru.matmex.subscription.repositories.UserRepository;
 import ru.matmex.subscription.services.CategoryService;
 import ru.matmex.subscription.services.UserService;
+import ru.matmex.subscription.services.notifications.NotificationService;
 import ru.matmex.subscription.services.utils.mapping.CategoryModelMapper;
+import ru.matmex.subscription.services.notifications.email.UserEmailNotificationSender;
 import ru.matmex.subscription.services.utils.mapping.UserModelMapper;
 import ru.matmex.subscription.utils.UserBuilder;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 
 @ContextConfiguration(classes = {UserServiceImpl.class, PasswordEncoder.class})
 @ExtendWith(MockitoExtension.class)
 class UserServiceImplTest {
-
     private final UserRepository userRepository = Mockito.mock(UserRepository.class);
-    private final CategoryService categoryService  = Mockito.mock(CategoryService.class);
     private final PasswordEncoder passwordEncoder = Mockito.mock(PasswordEncoder.class);
     private final UserModelMapper userModelMapper = new UserModelMapper(new CategoryModelMapper());
-
-    private final UserService userService = new UserServiceImpl(userRepository,passwordEncoder,userModelMapper,categoryService);
+    private final NotificationService notificationService = Mockito.mock(NotificationService.class);
+    private final Crypto crypto = Mockito.mock(Crypto.class);
+    private final UserService userService = new UserServiceImpl(
+            userRepository,
+            passwordEncoder,
+            crypto,
+            notificationService);
     private final User defaultUser = UserBuilder.anUser().defaultUser();
 
     /**
@@ -99,9 +110,9 @@ class UserServiceImplTest {
         String newEmail = "test@yandex.ru";
         UserUpdateModel userUpdateModel = new UserUpdateModel(12L, "test", newEmail);
         String oldEmail = "test@gmail.com";
-        User user = new User("test", oldEmail, "123");
+        User user = new User("test", oldEmail, "123","123".getBytes());
 
-        when(userRepository.getById(12L)).thenReturn(Optional.of(user));
+        when(userRepository.findById(12L)).thenReturn(Optional.of(user));
 
         userService.updateUser(userUpdateModel);
 
@@ -118,7 +129,7 @@ class UserServiceImplTest {
 
         when(userRepository.findByUsername("test")).thenReturn(Optional.of(defaultUser));
 
-        UserModel user = userService.getUser("test");
+        UserModel user = userService.getUserModel("test");
 
         assertThat(userModelMapper.map(defaultUser)).isEqualTo(user);
     }
@@ -133,7 +144,7 @@ class UserServiceImplTest {
 
         assertThatThrownBy(() -> userService.getUser(username))
                 .isInstanceOf(UsernameNotFoundException.class)
-                .hasMessage("User not found");
+                .hasMessage("User with name:"+username+ "not found");
     }
 
     /**
@@ -188,5 +199,23 @@ class UserServiceImplTest {
         assertThat(allUsers.get(1).username()).isEqualTo(usersList.get(1).getUsername());
 
         verify(userRepository).findAll();
+    }
+
+    /**
+     * Тестирование получение учетных данных для гугл-аккаунта пользователя
+     */
+    @Test
+    void testGetGoogleCredential(){
+        User user = UserBuilder.anUser().defaultUser();
+        user.setAccessToken("some access token");
+        user.setExpirationTimeMilliseconds(10L);
+        user.setRefreshToken("some refresh token");
+        when(userRepository.getById(user.getId())).thenReturn(Optional.of(user));
+        GoogleCredentialModel googleCredential = userService.getGoogleCredential(user.getId());
+
+        assertThat(googleCredential.accessToken()).isEqualTo("some access token");
+        assertThat(googleCredential.expirationTimeMilliseconds()).isEqualTo(10L);
+        assertThat(googleCredential.refreshToken()).isEqualTo("some refresh token");
+
     }
 }

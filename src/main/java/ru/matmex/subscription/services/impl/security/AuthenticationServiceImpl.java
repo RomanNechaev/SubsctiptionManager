@@ -27,6 +27,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         this.authenticationManager = authenticationManager;
         this.jwtUtils = jwtUtils;
     }
+
     @Override
     public AuthResponse authUser(AuthRequest authRequest) {
         checkOnNull(authRequest);

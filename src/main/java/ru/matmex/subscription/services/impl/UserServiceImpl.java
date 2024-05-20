@@ -1,5 +1,6 @@
 package ru.matmex.subscription.services.impl;
 
+import com.google.api.client.auth.oauth2.Credential;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationServiceException;
@@ -12,16 +13,17 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import ru.matmex.subscription.entities.User;
-import ru.matmex.subscription.models.user.Role;
-import ru.matmex.subscription.models.user.UserModel;
-import ru.matmex.subscription.models.user.UserRegistrationModel;
-import ru.matmex.subscription.models.user.UserUpdateModel;
+import ru.matmex.subscription.models.security.Crypto;
+import ru.matmex.subscription.models.user.*;
 import ru.matmex.subscription.repositories.UserRepository;
-import ru.matmex.subscription.services.CategoryService;
 import ru.matmex.subscription.services.UserService;
+import ru.matmex.subscription.services.notifications.NotificationService;
+import ru.matmex.subscription.services.utils.mapping.CategoryModelMapper;
 import ru.matmex.subscription.services.utils.mapping.UserModelMapper;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -31,21 +33,27 @@ import java.util.stream.Collectors;
 @Service
 public class UserServiceImpl implements UserService {
 
+    public static final Random RANDOM = new Random();
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserModelMapper userModelMapper;
-    private final CategoryService categoryService;
+    private final Crypto crypto;
+    private final NotificationService notificationService;
 
     @Autowired
-    public UserServiceImpl(UserRepository userRepository,
-                           PasswordEncoder passwordEncoder,
-                           UserModelMapper userModelMapper,
-                           @Lazy CategoryService categoryService) {
+    public UserServiceImpl(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            Crypto crypto,
+            @Lazy NotificationService notificationService
+    ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
-        this.userModelMapper = userModelMapper;
-        this.categoryService = categoryService;
+        this.notificationService = notificationService;
+        this.userModelMapper = new UserModelMapper(new CategoryModelMapper());
         createAdmin();
+        this.crypto = crypto;
     }
 
     /**
@@ -57,9 +65,7 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository
-                .findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User with name:" + username + "not found"));
+        User user = getUser(username);
         return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(), mapRolesToAuthorities(user.getRoles()));
     }
 
@@ -68,19 +74,21 @@ public class UserServiceImpl implements UserService {
         if (userRepository.existsByUsername(userRegistrationModel.username())) {
             throw new AuthenticationServiceException("Пользователь с таким именем уже существует");
         }
+        String secretKey = createSecretTelegramKey();
         User user = new User(userRegistrationModel.username(),
                 userRegistrationModel.email(),
-                passwordEncoder.encode(userRegistrationModel.password()));
+                passwordEncoder.encode(userRegistrationModel.password()),
+                crypto.encrypt(secretKey.getBytes(StandardCharsets.UTF_8)));
         userRepository.save(user);
-        categoryService.createDefaultSubscription(user);
+        notificationService.registerNotification(
+                "Вы успешно зарегистрировались в приложении! \n Ваш секретный ключ для тг: " + secretKey,
+                user.getId());
         return userModelMapper.map(user);
     }
 
     @Override
     public UserModel updateUser(UserUpdateModel userUpdateModel) {
-        User user = userRepository
-                .getById(userUpdateModel.id())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        User user = getUser(userUpdateModel.id());
         user.setUsername(userUpdateModel.name());
         user.setEmail(userUpdateModel.email());
         userRepository.save(user);
@@ -88,11 +96,29 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserModel getUser(String username) {
+    public UserModel getUserModel(Long id) {
         return userModelMapper
-                .map(userRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("User not found")));
+                .map(getUser(id));
     }
 
+    @Override
+    public UserModel getUserModel(String username) {
+        return userModelMapper
+                .map(getUser(username));
+    }
+    
+    @Override
+    public User getUser(String username) throws UsernameNotFoundException {
+        return userRepository
+                .findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User with name:" + username + "not found"));
+    }
+
+    @Override
+    public User getUser(Long id) throws UsernameNotFoundException {
+        return userRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    }
+      
     /**
      * Преобразовать роль к авторизационной роли spring-security
      *
@@ -109,9 +135,22 @@ public class UserServiceImpl implements UserService {
     @Override
     public User getCurrentUser() {
         Authentication user = SecurityContextHolder.getContext().getAuthentication();
-        return userRepository
-                .findByUsername(user.getName())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        return getUser(user.getName());
+    }
+
+    @Override
+    public void setTelegramChatId(User user, long telegramChatId) {
+        user.setTelegramChatId(telegramChatId);
+        userRepository.save(user);
+    }
+
+    private String createSecretTelegramKey() {
+        StringBuilder sb = new StringBuilder();
+        int length = 16;
+        while (sb.length() < length) {
+            sb.append(Integer.toHexString(RANDOM.nextInt()));
+        }
+        return sb.toString();
     }
 
     @Override
@@ -119,8 +158,9 @@ public class UserServiceImpl implements UserService {
         if (!userRepository.existsByUsername(username)) {
             throw new UsernameNotFoundException("User with" + username + " not found");
         }
-        User user = userRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        User user = getUser(username);
         userRepository.delete(user);
+        notificationService.registerNotification("Пользователь " + username + " успешно удален", user.getId());
         return "Пользователь успешно удален!";
     }
 
@@ -129,6 +169,36 @@ public class UserServiceImpl implements UserService {
         return userRepository
                 .findAll()
                 .stream().map(userModelMapper::map).toList();
+    }
+
+    @Override
+    public GoogleCredentialModel getGoogleCredentialCurrentUser() {
+        User currentUser = getCurrentUser();
+        return getGoogleCredential(currentUser.getId());
+    }
+
+    @Override
+    public GoogleCredentialModel getGoogleCredential(Long id) {
+        User user = userRepository
+                .getById(id)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        return new GoogleCredentialModel(user.getAccessToken(),
+                user.getExpirationTimeMilliseconds(),
+                user.getRefreshToken());
+    }
+
+    @Override
+    public void setGoogleCredential(Credential credential) {
+        User user = getCurrentUser();
+        user.setAccessToken(credential.getAccessToken());
+        user.setExpirationTimeMilliseconds(credential.getExpirationTimeMilliseconds());
+        user.setRefreshToken(credential.getRefreshToken());
+        userRepository.save(user);
+    }
+
+    @Override
+    public boolean isGoogleAccountLinked(Long id) {
+        return getGoogleCredential(id) == null;
     }
 
     /**

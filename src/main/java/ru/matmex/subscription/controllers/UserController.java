@@ -17,6 +17,7 @@ import java.util.List;
 public class UserController {
     private final UserService userService;
 
+
     @Autowired
     public UserController(UserService userService) {
         this.userService = userService;
@@ -51,7 +52,7 @@ public class UserController {
      */
     @GetMapping(value = "/api/admin/app/{username}")
     public ResponseEntity<UserModel> getUserByUsername(@PathVariable String username) {
-        return ResponseEntity.ok(userService.getUser(username));
+        return ResponseEntity.ok(userService.getUserModel(username));
     }
 
     /**

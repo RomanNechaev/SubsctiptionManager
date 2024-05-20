@@ -33,11 +33,10 @@ public class CategoryServiceImpl implements CategoryService {
     @Autowired
     public CategoryServiceImpl(CategoryRepository categoryRepository,
                                UserService userService,
-                               CategoryModelMapper categoryModelMapper,
                                @Lazy SubscriptionService subscriptionService) {
         this.categoryRepository = categoryRepository;
         this.userService = userService;
-        this.categoryModelMapper = categoryModelMapper;
+        this.categoryModelMapper = new CategoryModelMapper();
         this.subscriptionService = subscriptionService;
     }
 

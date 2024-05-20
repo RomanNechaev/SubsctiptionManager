@@ -37,13 +37,11 @@ import java.util.Optional;
 class CategoryServiceTest {
     private final CategoryRepository categoryRepository = Mockito.mock(CategoryRepository.class);
     private final UserService userService = Mockito.mock(UserService.class);
-    private final CategoryModelMapper categoryModelMapper = new CategoryModelMapper();
     private final SubscriptionService subscriptionService = Mockito.mock(SubscriptionService.class);
 
     private final CategoryService categoryService = new CategoryServiceImpl(
             categoryRepository,
             userService,
-            categoryModelMapper,
             subscriptionService);
     ;
 

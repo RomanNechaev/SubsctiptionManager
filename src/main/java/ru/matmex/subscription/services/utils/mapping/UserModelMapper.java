@@ -1,7 +1,5 @@
 package ru.matmex.subscription.services.utils.mapping;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import ru.matmex.subscription.entities.User;
 import ru.matmex.subscription.models.user.UserModel;
 
@@ -19,6 +17,8 @@ public class UserModelMapper {
         return new UserModel(
                 user.getId(),
                 user.getUsername(),
+                user.getEmail(),
+                user.getTelegramChatId(),
                 user.getCategories()
                         .stream()
                         .map(categoryModelMapper::map).toList());

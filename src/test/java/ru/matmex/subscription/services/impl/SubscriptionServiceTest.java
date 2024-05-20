@@ -48,7 +48,6 @@ class SubscriptionServiceTest {
     ;
     private final SubscriptionService subscriptionService = new SubscriptionServiceImpl(
             subscriptionRepository,
-            subscriptionModelMapper,
             categoryService,
             userService,
             categoryRepository);

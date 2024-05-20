@@ -1,6 +1,5 @@
 package ru.matmex.subscription.services.utils.mapping;
 
-import org.springframework.stereotype.Component;
 import ru.matmex.subscription.entities.Subscription;
 import ru.matmex.subscription.models.subscription.SubscriptionModel;
 

@@ -60,10 +60,10 @@ class ExportServiceTest {
 
         category.setSubscriptions(List.of(sub1, sub2));
 
-        UserModel userModel = new UserModel(1L, "test", Stream.of(category).map(categoryModelMapper::map).toList());
+        UserModel userModel = new UserModel(1L, "test","test@gmail.com",2L, Stream.of(category).map(categoryModelMapper::map).toList());
 
         when(userService.getCurrentUser()).thenReturn(testUser);
-        when(userService.getUser(testUser.getUsername())).thenReturn(userModel);
+        when(userService.getUserModel(testUser.getUsername())).thenReturn(userModel);
 
         String reportName = "TotalPriceCategory";
 
