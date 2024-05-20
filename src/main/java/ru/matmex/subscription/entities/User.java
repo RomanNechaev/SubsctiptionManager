@@ -19,11 +19,12 @@ public class User {
     public User() {
     }
 
-    public User(String username, String email, String password) {
+    public User(String username, String email, String password, byte[] telegramSecretKey) {
         this.username = username;
         this.email = email;
         this.password = password;
         this.categories = new ArrayList<>();
+        this.telegramSecretKey = telegramSecretKey;
         roles.add(Role.USER);
     }
 
@@ -42,6 +43,7 @@ public class User {
     private String username;
 
     private String password;
+    private Long telegramChatId;
     /**
      * Секретный ключ пользователя для привязки его телеграмм аккаунта
      * Генерируется один раз при привязки телеграмм аккаунта
@@ -96,6 +98,17 @@ public class User {
 
     public List<Category> getCategories() {
         return categories;
+    }
+
+    public Long getTelegramChatId() {
+        return telegramChatId;
+    }
+
+    public void setTelegramChatId(long telegramChatId) {
+        this.telegramChatId = telegramChatId;
+    }
+    public byte[] getTelegramSecretKey() {
+        return telegramSecretKey;
     }
 
     public String getAccessToken() {

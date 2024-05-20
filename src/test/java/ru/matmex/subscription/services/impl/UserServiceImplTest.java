@@ -16,6 +16,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ContextConfiguration;
 import ru.matmex.subscription.entities.User;
+import ru.matmex.subscription.models.security.Crypto;
 import ru.matmex.subscription.models.user.GoogleCredentialModel;
 import ru.matmex.subscription.models.user.UserModel;
 import ru.matmex.subscription.models.user.UserRegistrationModel;
@@ -42,19 +43,15 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @ExtendWith(MockitoExtension.class)
 class UserServiceImplTest {
     private final UserRepository userRepository = Mockito.mock(UserRepository.class);
-    private final CategoryService categoryService  = Mockito.mock(CategoryService.class);
     private final PasswordEncoder passwordEncoder = Mockito.mock(PasswordEncoder.class);
     private final UserModelMapper userModelMapper = new UserModelMapper(new CategoryModelMapper());
-    private final CredentialRepository credentialRepository = Mockito.mock(CredentialRepository.class);
     private final NotificationService notificationService = Mockito.mock(NotificationService.class);
     private final Crypto crypto = Mockito.mock(Crypto.class);
     private final UserService userService = new UserServiceImpl(
             userRepository,
             passwordEncoder,
             crypto,
-            credentialRepository,
-            notificationService
-    private final UserService userService = new UserServiceImpl(userRepository,passwordEncoder,categoryService);
+            notificationService);
     private final User defaultUser = UserBuilder.anUser().defaultUser();
 
     /**
@@ -113,7 +110,7 @@ class UserServiceImplTest {
         String newEmail = "test@yandex.ru";
         UserUpdateModel userUpdateModel = new UserUpdateModel(12L, "test", newEmail);
         String oldEmail = "test@gmail.com";
-        User user = new User("test", oldEmail, "123");
+        User user = new User("test", oldEmail, "123","123".getBytes());
 
         when(userRepository.findById(12L)).thenReturn(Optional.of(user));
 
@@ -132,9 +129,9 @@ class UserServiceImplTest {
 
         when(userRepository.findByUsername("test")).thenReturn(Optional.of(defaultUser));
 
-        UserModel user = userService.getUser("test");
+        UserModel user = userService.getUserModel("test");
 
-        //assertThat(userModelMapper.map(defaultUser)).isEqualTo(user);
+        assertThat(userModelMapper.map(defaultUser)).isEqualTo(user);
     }
 
     /**

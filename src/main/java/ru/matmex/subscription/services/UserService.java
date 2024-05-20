@@ -2,6 +2,7 @@ package ru.matmex.subscription.services;
 
 import com.google.api.client.auth.oauth2.Credential;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import ru.matmex.subscription.entities.User;
 import ru.matmex.subscription.models.user.GoogleCredentialModel;
 import ru.matmex.subscription.models.user.UserModel;
@@ -38,15 +39,18 @@ public interface UserService extends UserDetailsService {
      */
     UserModel getUserModel(Long userId);
 
+
     /**
      * Получить модель пользователя по имени
      *
      * @param username - имя пользователя
      * @return информация о пользователе
      */
-    UserModel getUser(String username);
+    UserModel getUserModel(String username);
 
     User getUser(Long id) throws UsernameNotFoundException;
+
+    User getUser(String username) throws UsernameNotFoundException;
 
     /**
      * Получить пользователя в текущей сессии

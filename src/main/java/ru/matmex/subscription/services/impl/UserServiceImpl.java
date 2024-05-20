@@ -13,15 +13,17 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import ru.matmex.subscription.entities.User;
+import ru.matmex.subscription.models.security.Crypto;
 import ru.matmex.subscription.models.user.*;
 import ru.matmex.subscription.repositories.UserRepository;
-import ru.matmex.subscription.services.CategoryService;
 import ru.matmex.subscription.services.UserService;
 import ru.matmex.subscription.services.notifications.NotificationService;
 import ru.matmex.subscription.services.utils.mapping.CategoryModelMapper;
 import ru.matmex.subscription.services.utils.mapping.UserModelMapper;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -44,14 +46,12 @@ public class UserServiceImpl implements UserService {
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             Crypto crypto,
-            CredentialRepository credentialRepository,
             @Lazy NotificationService notificationService
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.notificationService = notificationService;
         this.userModelMapper = new UserModelMapper(new CategoryModelMapper());
-        this.categoryService = categoryService;
         createAdmin();
         this.crypto = crypto;
     }
@@ -74,9 +74,11 @@ public class UserServiceImpl implements UserService {
         if (userRepository.existsByUsername(userRegistrationModel.username())) {
             throw new AuthenticationServiceException("Пользователь с таким именем уже существует");
         }
+        String secretKey = createSecretTelegramKey();
         User user = new User(userRegistrationModel.username(),
                 userRegistrationModel.email(),
-                passwordEncoder.encode(userRegistrationModel.password()));
+                passwordEncoder.encode(userRegistrationModel.password()),
+                crypto.encrypt(secretKey.getBytes(StandardCharsets.UTF_8)));
         userRepository.save(user);
         notificationService.registerNotification(
                 "Вы успешно зарегистрировались в приложении! \n Ваш секретный ключ для тг: " + secretKey,
